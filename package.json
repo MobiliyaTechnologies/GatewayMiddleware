@@ -1,0 +1,27 @@
+{
+  "name": "gateway-middleware",
+  "version": "1.0.0",
+  "description": "The pluggable gateway app to connect to various low range protocol sensors to internet",
+  "main": "main.js",
+  "dependencies":{
+    "electron":"^1.4.3",
+    "electron-packager":"^8.1.0",
+    "noble":"^1.8.0",
+    "moment-timezone":"^0.5.11",
+    "kafka-node":"^1.5.0"  
+  },
+  "scripts": {
+    "test": "sudo node main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://scm.agreeyamobility.net:8443/Intel/gateway-middleware.git"
+  },
+  "keywords": [
+    "gateway",
+    "plugin",
+    "iot"
+  ],
+  "author": "tarun.navadia@mobiliya.com",
+  "license": "ISC"
+}
