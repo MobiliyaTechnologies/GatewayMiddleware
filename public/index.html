@@ -178,19 +178,21 @@
 		   
 		   }
 		   $scope.getConnectionStr=function(mac){
+				mac='"f4:8e:38:d0:80:c8"';
 			    var authResponse = hello('adB2CSignIn').getAuthResponse();
                 if (authResponse != null) {
 				$http({
-                        url: $scope.config.restServer + 'api/IotHubGateway/'+mac,
+                        url: $scope.config.restServer + 'api/IotHubGateway',
                         dataType: 'json',
-                        method: 'GET',
+                        method: 'POST',
+						data:mac,
                         headers: {
                             "Content-Type": "application/json",
                            "Authorization": authResponse.token_type + ' ' + authResponse.access_token,
                         }
                     }).then(function (response) {
                         console.log(response);
-						$scope.saveConnectionStr(response.data.IotHubHostName);
+						$scope.saveConnectionStr(response.data.DeviceConnectionString);
 
                     })
                         .catch(function (error) {

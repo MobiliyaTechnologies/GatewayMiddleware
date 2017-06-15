@@ -1,23 +1,37 @@
 'use strict';
 
-var getmac = require('getmac');
+//var getmac = require('getmac');
 var jsonfile = require('jsonfile');
 var bus = require('./eventbus');
+var fs = require('fs');
 
 var file = 'sensorlist.json';
 var clientFromConnectionString = require('azure-iot-device-mqtt').clientFromConnectionString;
 var Message = require('azure-iot-device').Message;
 var client = null;
 
+/*
 getmac.getMac(function(err,macAddress){
     if (err)  {
         console.log(err);
         return;
     }
 	console.log(macAddress);
+	
 	var connectionString = 'HostName=AssetIOTHub.azure-devices.net;DeviceId=' + macAddress + ';SharedAccessKey=yN0Tlpn18dnNwhCiKTuCTfT+BhMHK2rF36D0OoFECf8=';
 	client = clientFromConnectionString(connectionString);
 	client.open(connectCallback);
+});*/
+
+fs.readFile('././connectionString.txt', 'utf8', function (err,data) {
+	  if (err) {
+		console.log(err);
+		  return;
+	  }
+		console.log(data);
+		var connectionString = data;
+		client = clientFromConnectionString(connectionString);
+		client.open(connectCallback);
 });
 
 function printResultFor(op) {

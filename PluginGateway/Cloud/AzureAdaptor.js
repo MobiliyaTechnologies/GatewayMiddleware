@@ -12,7 +12,11 @@
 var Client = require('azure-iot-device').Client;
 var Message = require('azure-iot-device').Message;
 
+var jsonfile = require('jsonfile');
+var bus = require('../../eventbus');
 var fs = require('fs');
+
+var file = 'sensorlist.json';
 
 // String containing Hostname, Device Id & Device Key in the following formats:
 //  "HostName=<iothub_host_name>;DeviceId=<device_id>;SharedAccessKey=<device_key>"
@@ -51,6 +55,15 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 			cb();
 			client.on('message', function (msg) {
 			  console.log('Id: ' + msg.messageId + ' Body: ' + msg.data);
+				
+				console.log('Message Received - Id: ' + msg.messageId + ' Body: ' + msg.data);
+				  //client.complete(msg, printResultFor('completed'));
+					if (isJSON((msg.data).toString())) {
+						console.log("JSON");
+						console.log((msg.data).toString());
+						saveData((msg.data).toString());
+					}
+				
 			  // When using MQTT the following line is a no-op.
 			  client.complete(msg, printResultFor('completed'));
 			  // The AMQP and HTTP transports also have the notion of completing, rejecting or abandoning the message.
@@ -65,7 +78,7 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 			});
 
 			client.on('disconnect', function () {
-			  clearInterval(sendInterval);
+			  //clearInterval(sendInterval);
 			  client.removeAllListeners();
 			  client.open(connectCallback);
 			});
@@ -80,4 +93,58 @@ function printResultFor(op) {
     if (res) console.log(op + ' status: ' + res.constructor.name);
   };
 }
+
+
+function isJSON(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+		console.log(e);
+        return false;
+    }
+    return true;
+}
+
+var saveData = function(msg) {
+	try {
+		jsonfile.readFile(file, function(err, obj) {
+			if(obj == undefined) {
+				obj = {};
+			}
+			var message = JSON.parse(msg);
+			console.dir(JSON.stringify(obj));
+			console.log('Received Mesage ', message);
+            if(!message.hasOwnProperty('EnableSensor')) {
+				console.log("Invalid JSON");
+                return;
+            }
+			var key = message.EnableSensor.SensorKey;
+			console.log('key : ' + key);
+			console.log('Status : ' + message.Status);
+			if(message.Status == "Attach") {
+				console.log('sensor attached');
+				obj[key] = message;
+			} else if(message.Status == "Detach") {
+				console.log('sensor detached');
+				if(obj.hasOwnProperty(key)){
+					console.log('sensor deleted');
+					delete obj[key];
+				}
+			}
+			console.log('writing file');
+			console.log(JSON.stringify(obj));
+			jsonfile.writeFile(file, obj, function (err) {
+				  if(err) {
+					console.error(err);
+				  }
+				console.log('Emit update event !');
+				bus.emit('updatelist');
+			});
+		});
+	} catch (err) {
+		// handle the error safely
+		console.log(err);
+	}
+}
+
 module.exports = AzureAdaptor;

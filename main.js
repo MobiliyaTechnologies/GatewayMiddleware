@@ -151,7 +151,7 @@ CloudLed("0");
 //setInterval(function(){UpdateIP()},120000);
 // call the get whitelist
 //GetWhiteList(cb);
-require('./c2d_message_receiver');
+//require('./c2d_message_receiver');
 // call the get whitelist regularly
 //setInterval(function(){GetWhiteList(cb)},30000);
 // constructor for cloud init

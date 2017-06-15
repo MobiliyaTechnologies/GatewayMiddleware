@@ -12,6 +12,8 @@ var bodyParser = require('body-parser');
 fs.readFile(file, 'utf-8', function (err,data) {
 	  if (err) {
 		 console.log("Connection String Does Not Exists !!");
+		 console.log("Please Login !!");
+      console.log("open url 'http://localhost:65159/' in browser");
 		 console.log(err);
 	  } else {
 		console.log("Connection String Exists !!");
