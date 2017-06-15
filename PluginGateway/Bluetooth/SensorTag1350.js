@@ -37,8 +37,12 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 					//var dataMSB0 = data.readUInt8BE(2);
 					//var dataMSB1 = data.readUInt8BE(3);
 					//console.log(data);
+					
+					// formatting data in m/s square in SI units
+					var json_XYZ = {temperature:(data.readUInt16LE(2,3)/128.0)};
+					
 					console.log("SensorTag1350 Temperature",data.readUInt16LE(2,3)/128.0);
-					CloudAdaptor(DataWrapper(peripheral.id,"SensorTag1350","Temperature",data.readUInt16LE(2,3)/128.0)); // pushing the data to cloud
+					CloudAdaptor(DataWrapper(peripheral.id,"SensorTag1350","Temperature",json_XYZ)); // pushing the data to cloud
 				});
 				
 				var writeData = new Buffer([0x01]);

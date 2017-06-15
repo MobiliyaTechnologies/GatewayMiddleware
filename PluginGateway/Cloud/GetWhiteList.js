@@ -6,7 +6,8 @@ var getWhitelist = function getWhitelist(cb) {
 		port:80,
         host: config.OnboardSensorIP,
         path: '/listonboardsensor'
-    }, function(response) {
+ //		path: "/GetAllEnableSensors"
+	}, function(response) {
         // Continuously update stream with data
         var body = '';
         response.on('data', function(d) {
@@ -14,12 +15,14 @@ var getWhitelist = function getWhitelist(cb) {
         });
         response.on('end', function() {
             // Data reception is done, do whatever with it!
-            //console.log(body);
+            console.log("body");
+			console.log(body);
 			fs.writeFile('whitelist.json', body, 'utf8', function(){
 				console.log("Json retrived and wrote to file");
 			});
 			var content = JSON.parse(body);
-			//console.log(content.data);
+			console.log("content.data");
+			console.log(content.data);
 			if(content.data){
 				var whitelistAddress = [];
 				content.data.forEach(function(item){

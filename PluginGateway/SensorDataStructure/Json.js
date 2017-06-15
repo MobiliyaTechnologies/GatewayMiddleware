@@ -16,15 +16,53 @@ Json.prototype.JSON_data = function (sensorid,sname,sensorservice,sensordata){
 					};
 	//console.log(json_data);
 	*/
+	var data = null;
+	var capability = null;
+	var capabilityId = 0;
+	if(sname == "SensorTag2650") {
+		capability = "temperature";
+		capabilityId = 1;
+		data = {
+			"temperature":sensordata.temperature,
+			"timestamp": new Date()
+		};
+		
+	} else if(sname == "SensorTag1350") {
+		capability = "temperature";
+		capabilityId = 1;
+		data = {
+			"temperature":sensordata.temperature,
+			"timestamp": new Date()
+		};
+		
+	} else if(sname == "ThundeBoard-React") {
+		capability = "Luminescence";
+		capabilityId = 1;
+		data = {
+			"Luminescence":sensordata.Luminescence,
+			"timestamp": new Date()
+		};
+		
+	} else {
+		capability = "accelerometer";
+		capabilityId = 2;
+		data = { 
+			"x": sensordata.x,
+			"y": sensordata.y,
+			"z": sensordata.z,
+			//"timestamp": Moment.tz(config.GatewayTimezone).format().replace(/T/,' ').replace(/\+..+/,'') //removing T and everything after the .
+			//"timestamp": new Date().getTime()
+			"timestamp": new Date()
+			};
+	}
+	
 	json_data = { 
-					//"temperature":sensordata.temperature,
-					"x": sensordata.x,
-					"y": sensordata.y,
-					"z": sensordata.z,
-				 	//"timestamp": Moment.tz(config.GatewayTimezone).format().replace(/T/,' ').replace(/\+..+/,'') //removing T and everything after the .
-				 	//"timestamp": new Date().getTime()
-					"timestamp": new Date()
-					};
+			"type":sname,
+			"data": data,
+			"capability": capability,
+			"capabilityId": capabilityId,
+			"timestamp": new Date()
+	};
 	//console.log(json_data);
 	return JSON.stringify(json_data)
 };

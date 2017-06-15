@@ -3,12 +3,21 @@
   "version": "1.0.0",
   "description": "The pluggable gateway app to connect to various low range protocol sensors to internet",
   "main": "main.js",
-  "dependencies":{
-    "electron":"^1.4.3",
-    "electron-packager":"^8.1.0",
-    "noble":"^1.8.0",
-    "moment-timezone":"^0.5.11",
-    "kafka-node":"^1.5.0"  
+  "dependencies": {
+    "azure-event-hubs": "0.0.8",
+    "azure-iot-device": "^1.1.14",
+    "azure-iot-device-mqtt": "^1.1.14",
+    "azure-iothub": "^1.1.11",
+    "body-parser": "^1.17.2",
+    "electron": "^1.4.3",
+    "electron-packager": "^8.1.0",
+    "events": "^1.1.1",
+    "express": "^4.15.3",
+    "getmac": "^1.2.1",
+    "jsonfile": "^3.0.0",
+    "kafka-node": "^1.5.0",
+    "moment-timezone": "^0.5.11",
+    "noble": "^1.8.0"
   },
   "scripts": {
     "test": "sudo node main.js"

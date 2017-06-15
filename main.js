@@ -2,6 +2,7 @@
 //      rest all device specific libraries are plugin for more information go to specific imports
 var noble = require('noble');
 var config = require('./config');
+var localServer = require('./LocalServer');
 var SensorTag2650 = require('./PluginGateway/Bluetooth/SensorTag2650');
 var SensorTag1350 = require('./PluginGateway/Bluetooth/SensorTag1350');
 var ThunderboardReact = require('./PluginGateway/Bluetooth/ThunderReact');
@@ -17,6 +18,36 @@ var GetWhiteList = require('./PluginGateway/Cloud/GetWhiteList');
 const CompatibleSensors = [];
 var DiscoveredPeripheral = [];
 var allowDuplicates = false;
+var jsonfile = require('jsonfile')
+var sensorListFile = 'sensorlist.json';
+var bus = require('./eventbus');
+
+
+//Create an event handler:
+var myUpdateEventHandler = function () {
+	  updateSensorList();
+}
+
+function updateSensorList() {
+	console.log('Update sensor list!');
+	jsonfile.readFile(sensorListFile, function(err, obj) {
+		if (err) {
+		 console.log("Unabel to read sensorListFile !!");
+		 console.log(err);
+		  return;
+		  } 
+		  console.log("Updating list !!");	
+		  console.log(Object.keys(obj));
+		  console.log(obj);
+		  cb(Object.keys(obj), obj);
+	});
+}
+
+updateSensorList();
+
+//Assign the event handler to an event:
+bus.on('updatelist', myUpdateEventHandler);
+
 //function which retireves the whitelist address from the api and saves to file "whitelist.json", and updates the global variable "whitelistAddressAll,whitelistContentAll"
 //cb is the callback function after the getwhitelist for updating the global variables
 function cb(whitelistaddresses,whitelistContent){
@@ -45,6 +76,7 @@ function BLEApp (){
 	console.log("started scanning for ble sevices with following whitelisted address :",whitelistAddressAll);
 	//callback when BLE scan discovers a new ble device, return a peripheral object
 	noble.on('discover',function(peripheral) { 
+		//console.log(peripheral)
 		// search for the local devices at, if it is a whitelisted address, connect to its specific sensor library
 		var index = whitelistAddressAll.indexOf(peripheral.id);
 		if (index == -1){
@@ -58,29 +90,30 @@ function BLEApp (){
 			}
 		}else{
 			// check for particular case of the whitelist address
-			if (whitelistContentAll[index].sname == "SensorTag2650"){
-				var ST_2650_DS = new SensorDataStructure();
+			console.log(peripheral.id);
+			if (whitelistContentAll[peripheral.id].EnableSensor.SensorType == "SensorTag2650"){
+				//var ST_2650_DS = new SensorDataStructure();
 				var ST_2650_CloudAdaptor = new CloudAdaptor();
 				var ST_2650_Handle = new SensorTag2650();
 				ST_2650_Handle.SensorTagHandle2650(peripheral,ST_2650_CloudAdaptor.AzureHandle,ST_2650_DS.JSON_data);
-			}else if (whitelistContentAll[index].sname == "SensorTag1350"){
+			}else if (whitelistContentAll[peripheral.id].EnableSensor.SensorType == "SensorTag1350"){
 				var ST1350_DS = new SensorDataStructure();
 				var ST1350_CloudAdaptor = new CloudAdaptor();
 				var ST1350_Handle = new SensorTag1350();
 				ST1350_Handle.SensorTagHandle1350(peripheral,ST1350_CloudAdaptor.AzureHandle,ST1350_DS.JSON_data);
-			}else if (whitelistContentAll[index].sname == "Bosch-XDK"){
+			}else if (whitelistContentAll[peripheral.id].EnableSensor.SensorType == "Bosch-XDK"){
 				var XDK_DS = new SensorDataStructure();
 				var XDK_CloudAdaptor = new CloudAdaptor();
 				var XDK_Handle = new XDK();
 				XDK_Handle.XDKHandle(peripheral,XDK_CloudAdaptor.AzureHandle,XDK_DS.JSON_data);
-			}else if (whitelistContentAll[index].sname == "ThunderBoard-React"){
+			}else if (whitelistContentAll[peripheral.id].EnableSensor.SensorType == "ThunderBoard-React"){
 			//if (peripheral.id == "000b571c53ae"){ // for testing the sensor locally without whitelisting
-				var ThunderboardReact_DS = new SensorDataStructure();
+				//var ThunderboardReact_DS = new SensorDataStructure();
 				var ThunderboardReact_CloudAdaptor = new CloudAdaptor();
 				var ThunderboardReact_Handle = new ThunderboardReact();
 				ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,ThunderboardReact_CloudAdaptor.AzureHandle,ThunderboardReact_DS.JSON_data);
-			}else if (whitelistContentAll[index].sname == "ThunderBoard-Sense"){
-				var ThunderboardSense_DS = new SensorDataStructure();
+			}else if (whitelistContentAll[peripheral.id].EnableSensor.SensorType == "ThunderBoard-Sense"){
+				//var ThunderboardSense_DS = new SensorDataStructure();
 				var ThunderboardSense_CloudAdaptor = new CloudAdaptor();
 				var ThunderboardSense_Handle = new ThunderboardSense();
 				ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,ThunderboardSense_CloudAdaptor.AzureHandle,ThunderboardSense_DS.JSON_data);
@@ -113,14 +146,14 @@ function BLEApp (){
 //Switch off the Cloud Led as the cloud is yet to start
 CloudLed("0");
 //call the Update IP on cloud
-UpdateIP();
+//UpdateIP();
 //update the IP every 3minutes
-setInterval(function(){UpdateIP()},120000);
+//setInterval(function(){UpdateIP()},120000);
 // call the get whitelist
-GetWhiteList(cb);
-
+//GetWhiteList(cb);
+require('./c2d_message_receiver');
 // call the get whitelist regularly
-setInterval(function(){GetWhiteList(cb)},30000);
+//setInterval(function(){GetWhiteList(cb)},30000);
 // constructor for cloud init
 var CloudInit = new CloudAdaptor();
 
@@ -130,4 +163,3 @@ CloudInit.AzureInit(function (){
 	CloudLed("1");//Power on the cloud led as the cloud init is now successful
 	BLEApp();
 });
-
