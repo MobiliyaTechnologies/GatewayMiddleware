@@ -1,5 +1,5 @@
 function SensorTag1350 () { };//class for SensorTag1350
-SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,DataWrapper){ // sensor tag 1350 handle
+SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,DataWrapper, SensorDetails){ // sensor tag 1350 handle
 	peripheral.connect(function(error) { //connect
 		console.log('connected to peripheral: '	+ peripheral.uuid);
 		process.on('SIGINT', function() {
@@ -38,11 +38,18 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 					//var dataMSB1 = data.readUInt8BE(3);
 					//console.log(data);
 					
-					// formatting data in m/s square in SI units
-					var json_XYZ = {temperature:(data.readUInt16LE(2,3)/128.0)};
+					var capId = 0;
+					for(var item in SensorDetails.SensorCapabilities) {
+						if(SensorDetails.SensorCapabilities[item].Name == "Temperature") {
+							capId = SensorDetails.SensorCapabilities[item].Id;
+						}
+					}
+					
+					// formatting data in degree celsius in SI units
+					var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),Temperature:(data.readUInt16LE(2,3)/128.0)};
 					
 					console.log("SensorTag1350 Temperature",data.readUInt16LE(2,3)/128.0);
-					CloudAdaptor(DataWrapper(peripheral.id,"SensorTag1350","Temperature",json_XYZ)); // pushing the data to cloud
+					CloudAdaptor(DataWrapper(peripheral.id,"SensorTag1350","Temperature",json_data)); // pushing the data to cloud
 				});
 				
 				var writeData = new Buffer([0x01]);

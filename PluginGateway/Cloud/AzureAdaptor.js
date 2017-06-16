@@ -54,14 +54,16 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 			console.log('azure iot sdk connected');
 			cb();
 			client.on('message', function (msg) {
-			  console.log('Id: ' + msg.messageId + ' Body: ' + msg.data);
-				
-				console.log('Message Received - Id: ' + msg.messageId + ' Body: ' + msg.data);
-				  //client.complete(msg, printResultFor('completed'));
+				console.log('Message Received ! Id: ' + msg.messageId + ' Body: ' + msg.data + ' PropertyList:  ', msg.properties.propertyList[0]);
 					if (isJSON((msg.data).toString())) {
 						console.log("JSON");
-						console.log((msg.data).toString());
-						saveData((msg.data).toString());
+						//console.log((msg.data).toString());
+						
+						if(msg.properties.propertyList[0].hasOwnProperty('key')) {
+							var status = msg.properties.propertyList[0].value;
+							//console.log('status : ', status);
+							saveData((msg.data).toString(), status);
+						}
 					}
 				
 			  // When using MQTT the following line is a no-op.
@@ -105,38 +107,38 @@ function isJSON(str) {
     return true;
 }
 
-var saveData = function(msg) {
+var saveData = function(msg, status) {
 	try {
 		jsonfile.readFile(file, function(err, obj) {
 			if(obj == undefined) {
 				obj = {};
 			}
 			var message = JSON.parse(msg);
-			console.dir(JSON.stringify(obj));
-			console.log('Received Mesage ', message);
-            if(!message.hasOwnProperty('EnableSensor')) {
-				console.log("Invalid JSON");
-                return;
-            }
-			var key = message.EnableSensor.SensorKey;
-			console.log('key : ' + key);
-			console.log('Status : ' + message.Status);
-			if(message.Status == "Attach") {
-				console.log('sensor attached');
-				obj[key] = message;
-			} else if(message.Status == "Detach") {
-				console.log('sensor detached');
-				if(obj.hasOwnProperty(key)){
-					console.log('sensor deleted');
-					delete obj[key];
+			//console.log(message);
+			for(var sensorDetail in message) {
+				//console.log('Sensor Detail ', message[sensorDetail]);
+				if(!message[sensorDetail].hasOwnProperty('SensorKey')) {
+					console.log("Invalid JSON");
+					//return;
+				} else {
+					var key = message[sensorDetail].SensorKey;
+					//console.log('key : ' + key);
+					if(status == "Attach") {
+						obj[key] = message[sensorDetail];
+					} else {
+						if(obj.hasOwnProperty(key)){
+							console.log('sensor ' + key + ' deleted');
+							delete obj[key];
+						}
+					}	
 				}
 			}
 			console.log('writing file');
 			console.log(JSON.stringify(obj));
 			jsonfile.writeFile(file, obj, function (err) {
-				  if(err) {
-					console.error(err);
-				  }
+			    if(err) {
+				    console.error(err);
+			    }
 				console.log('Emit update event !');
 				bus.emit('updatelist');
 			});

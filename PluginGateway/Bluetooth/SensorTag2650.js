@@ -1,6 +1,6 @@
 //var noble = require('noble');
 function SensorTag2650() { };//class method for sesnortag 2650
-SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,DataWrapper){// sensor tag 2650 handle
+SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails){// sensor tag 2650 handle
 	peripheral.connect(function(error) {
 		console.log('connected to peripheral: '	+ peripheral.uuid);
 		process.on('SIGINT', function() {
@@ -38,8 +38,20 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					//var dataMSB0 = data.readUInt8BE(2);
 					//var dataMSB1 = data.readUInt8BE(3);
 					//console.log(data);
+					
+					var capId = 0;
+					for(var item in SensorDetails.SensorCapabilities) {
+						if(SensorDetails.SensorCapabilities[item].Name == "Temperature") {
+							capId = SensorDetails.SensorCapabilities[item].Id;
+						}
+					}
+					//GroupId:SensorDetails.GroupId,
+					
+					// formatting data in degree celsius in SI units
+					var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),Temperature:(data.readUInt16LE(2,3)/128.0)};
+					
 					console.log("SensorTag2650 Temperature :",data.readUInt16LE(2,3)/128.0);
-					CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Temperature",data.readUInt16LE(2,3)/128.0));// pushing the data to cloud
+					CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Temperature",json_data));// pushing the data to cloud
 				});
 				
 				var writeData = new Buffer([0x01]);

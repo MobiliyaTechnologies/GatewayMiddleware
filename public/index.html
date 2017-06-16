@@ -178,7 +178,9 @@
 		   
 		   }
 		   $scope.getConnectionStr=function(mac){
-				mac='"f4:8e:38:d0:80:c8"';
+				//mac='"f4:8e:38:d0:80:c8"';
+			    mac='"'+mac+'"';
+			    console.log("MAC Address ::",mac);			   
 			    var authResponse = hello('adB2CSignIn').getAuthResponse();
                 if (authResponse != null) {
 				$http({
@@ -191,12 +193,12 @@
                            "Authorization": authResponse.token_type + ' ' + authResponse.access_token,
                         }
                     }).then(function (response) {
-                        console.log(response);
+                        console.log("Connection String ::",response);
 						$scope.saveConnectionStr(response.data.DeviceConnectionString);
 
                     })
                         .catch(function (error) {
-                            
+                            console.log("Connection String Error ::",error);
                         });
 
                 }
@@ -219,6 +221,7 @@
                         }
                     }).then(function (response) {
                         console.log(response);
+						alert("Successfully stored connection string !");
                     })
                         .catch(function (error) {
                             
@@ -235,7 +238,7 @@
                           
                         }
                     }).then(function (response) {
-                        console.log("MAC Address ::",response.data);
+                       
 						$scope.getConnectionStr(response.data);
                     })
                         .catch(function (error) {

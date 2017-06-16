@@ -1,5 +1,5 @@
 function XDK () { };//class for XDK
-XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper){// XDK handle
+XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails){// XDK handle
 	peripheral.connect(function(error) {
 		process.on('SIGINT', function() {
 			console.log("Caught interrupt signal");
@@ -35,8 +35,17 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper){// XDK 
 					// The substituted value will be contained in the result variable
 					var zValue = (data.split(' ')[2]).replace(/\0[\s\S]*$/g,'');// regular expression for handling the z value
 					
+					var capId = 0;
+					for(var item in SensorDetails.SensorCapabilities) {
+						if(SensorDetails.SensorCapabilities[item].Name == "Accelerometer") {
+							capId = SensorDetails.SensorCapabilities[item].Id;
+						}
+					}
+					//GroupId:SensorDetails.GroupId,
+					
 					// formatting data in m/s square in SI units
-					var json_XYZ = {x:(Math.floor(parseInt(data.split(' ')[0])/430)),y:(Math.floor(parseInt(data.split(' ')[1])/430)),z:(Math.floor(parseInt(zValue)/430))};
+					var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),
+									 x:(Math.floor(parseInt(data.split(' ')[0])/430)),y:(Math.floor(parseInt(data.split(' ')[1])/430)),z:(Math.floor(parseInt(zValue)/430))};
 
 					// the value can be scaled as per the requirement by editing the above line 
 					//var json_XYZ = {x:data.split(' ')[0],y:data.split(' ')[1],z:zValue}// formatting raw data 

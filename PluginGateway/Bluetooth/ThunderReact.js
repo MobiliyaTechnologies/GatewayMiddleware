@@ -3,12 +3,16 @@ var EnvironInterval;
 var LightInterval;
 function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex) {
 	Humidity.read(function(err,data){
-		console.log("Humidty Data :", data.readUInt16LE());
-		CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-React","Humidity",data.readUInt16LE().toString().slice(0,2)+"."+data.readUInt16LE().toString().slice(2,4)));
+		console.log("Humidity Data :", data.readUInt16LE());
+		// formatting Humidity data in RH in SI units
+		var json_data = {Humidity:(data.readUInt16LE().toString().slice(0,2)+"."+data.readUInt16LE().toString().slice(2,4))};
+		CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-React","Humidity",json_data));
 	});
 	Temperature.read(function(err,data){
 		console.log("Temperature Data :", data.readUInt16LE());
-		CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-React","Temperature",data.readUInt16LE().toString().slice(0,2)+"."+data.readUInt16LE().toString().slice(2,4)));
+		// formatting data in degree celsius in SI units
+		var json_data = {Temperature:(data.readUInt16LE().toString().slice(0,2)+"."+data.readUInt16LE().toString().slice(2,4))};
+		CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-React","Temperature",json_data));
 	});
 	/*
 	UVIndex.read(function(err,data){
@@ -21,7 +25,9 @@ function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperatu
 function readAmbientLight(peripheral,CloudAdaptor,DataWrapper,AmbientLight){
 	AmbientLight.read(function(err,data){
 		console.log("AmbientLight Data :", data.readUInt16LE());
-		CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-React","Luminescence",Math.floor(data.readUInt16LE()/10)));
+		// formatting data in Lux in SI units
+		var json_data = {Temperature:(Math.floor(data.readUInt16LE()/10))};
+		CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-React","Luminescence",json_data));
 	});
 };
 ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudAdaptor,DataWrapper){

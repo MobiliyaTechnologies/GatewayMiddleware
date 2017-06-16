@@ -16,6 +16,7 @@ Json.prototype.JSON_data = function (sensorid,sname,sensorservice,sensordata){
 					};
 	//console.log(json_data);
 	*/
+	/*
 	var data = null;
 	var capability = null;
 	var capabilityId = 0;
@@ -63,7 +64,9 @@ Json.prototype.JSON_data = function (sensorid,sname,sensorservice,sensordata){
 			"capabilityId": capabilityId,
 			"timestamp": new Date()
 	};
+	*/
+	
 	//console.log(json_data);
-	return JSON.stringify(json_data)
+	return JSON.stringify(sensordata);
 };
 module.exports = Json;
