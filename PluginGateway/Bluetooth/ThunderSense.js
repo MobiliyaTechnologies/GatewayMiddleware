@@ -1,5 +1,5 @@
 function ThunderboardSense () { };
-ThunderboardSense.prototype.ThunderboardSenseHandle = function (peripheral){
+ThunderboardSense.prototype.ThunderboardSenseHandle = function (peripheral,CloudAdaptor,DataWrapper, SensorDetails){
 	peripheral.connect(function(error) {
 		console.log('connected to peripheral: '	+ peripheral.uuid);
 
@@ -45,6 +45,24 @@ ThunderboardSense.prototype.ThunderboardSenseHandle = function (peripheral){
 					Orientation.on('data', function(data,isNotification) {
 						//var data = data.toString('utf-8');
 						console.log("Orientation :",data.readInt16LE(0,1),data.readInt16LE(2,3),data.readInt16LE(4,5));
+						
+						var capId = 0;
+						var hasCapability = false;
+						for(var item in SensorDetails.SensorCapabilities) {
+							if(SensorDetails.SensorCapabilities[item].Name == "Orientation") {
+								capId = SensorDetails.SensorCapabilities[item].Id;
+								hasCapability = false;
+								break;
+							}
+						}
+						if (hasCapability) {
+							// formatting data in Lux in SI units
+							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),			 
+											 x:(data.readInt16LE(0,1)),y:(data.readInt16LE(2,3)),z:(data.readInt16LE(4,5))}
+							CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","Orientation",json_data));// pushing the data to cloud
+							console.log(json_data);
+						}
+						
 						//console.log(data);
 					});
 					Orientation.subscribe(function(error) {
@@ -87,26 +105,122 @@ ThunderboardSense.prototype.ThunderboardSenseHandle = function (peripheral){
 				Pressure.read(function(err,data){
 					console.log("Pressure :", data.readUInt32LE());
 					//kafkaHandle(JSON_data(peripheral.address,"ThunderboardSense","Pressure",data.readUInt16LE()));
+					var capId = 0;
+					var hasCapability = false;
+					for(var item in SensorDetails.SensorCapabilities) {
+						if(SensorDetails.SensorCapabilities[item].Name == "Pressure") {
+							capId = SensorDetails.SensorCapabilities[item].Id;
+							hasCapability = false;
+							break;
+						}
+					}
+					if (hasCapability) {
+						// formatting data in Lux in SI units
+						var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),
+													 Pressure:data.readUInt16LE()}
+						CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","Pressure",json_data));// pushing the data to cloud
+						console.log(json_data);
+					}
 				});
 				Luminescence.read(function(err,data){
 					console.log("Light Data :", data.readUInt32LE());
 					//kafkaHandle(JSON_data(peripheral.address,"ThunderboardSense","Luminescence",data.readUInt16LE()));
+					var capId = 0;
+					var hasCapability = false;
+					for(var item in SensorDetails.SensorCapabilities) {
+						if(SensorDetails.SensorCapabilities[item].Name == "Luminescence") {
+							capId = SensorDetails.SensorCapabilities[item].Id;
+							hasCapability = false;
+							break;
+						}
+					}
+					if (hasCapability) {
+						// formatting data in Lux in SI units
+						var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),
+													 Luminescence:data.readUInt16LE()}
+						CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","Luminescence",json_data));// pushing the data to cloud
+						console.log(json_data);
+					}
 				});
 				NoiseLevel.read(function(err,data){
 					console.log("NoiseLevel Data :", data.readUInt16LE());
 					//kafkaHandle(JSON_data(peripheral.address,"ThunderboardSense","NoiseLevel",data.readUInt16LE()));
+					var capId = 0;
+					var hasCapability = false;
+					for(var item in SensorDetails.SensorCapabilities) {
+						if(SensorDetails.SensorCapabilities[item].Name == "NoiseLevel") {
+							capId = SensorDetails.SensorCapabilities[item].Id;
+							hasCapability = false;
+							break;
+						}
+					}
+					if (hasCapability) {
+						// formatting data in Lux in SI units
+						var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),
+													 NoiseLevel:data.readUInt16LE()}
+						CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","NoiseLevel",json_data));// pushing the data to cloud
+						console.log(json_data);
+					}
 				});
 				Humidity.read(function(err,data){
 					console.log("Humidty Data :", data.readUInt16LE());
 					//kafkaHandle(JSON_data(peripheral.address,"ThunderboardSense","Humidty",data.readUInt16LE()));
+					var capId = 0;
+					var hasCapability = false;
+					for(var item in SensorDetails.SensorCapabilities) {
+						if(SensorDetails.SensorCapabilities[item].Name == "Humidity") {
+							capId = SensorDetails.SensorCapabilities[item].Id;
+							hasCapability = false;
+							break;
+						}
+					}
+					if (hasCapability) {
+						// formatting data in Lux in SI units
+						var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),
+													 Humidity:data.readUInt16LE()}
+						CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","Humidity",json_data));// pushing the data to cloud
+						console.log(json_data);
+					}
 				});
 				Temperature.read(function(err,data){
 					console.log("Temperature Data :", data.readUInt16LE());
 					//kafkaHandle(JSON_data(peripheral.address,"ThunderboardSense","Temperature",data.readUInt16LE()));
+					var capId = 0;
+					var hasCapability = false;
+					for(var item in SensorDetails.SensorCapabilities) {
+						if(SensorDetails.SensorCapabilities[item].Name == "Temperature") {
+							capId = SensorDetails.SensorCapabilities[item].Id;
+							hasCapability = false;
+							break;
+						}
+					}
+					if (hasCapability) {
+						// formatting data in Lux in SI units
+						var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),
+													 Temperature:data.readUInt16LE()}
+						CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","Temperature",json_data));// pushing the data to cloud
+						console.log(json_data);
+					}
 				});
 				UVIndex.read(function(err,data){
 					console.log("UVIndex Data :", data.readUInt8());
 					//kafkaHandle(JSON_data(peripheral.address,"ThunderboardSense","UVIndex",data.readUInt16LE()));
+					var capId = 0;
+					var hasCapability = false;
+					for(var item in SensorDetails.SensorCapabilities) {
+						if(SensorDetails.SensorCapabilities[item].Name == "UVIndex") {
+							capId = SensorDetails.SensorCapabilities[item].Id;
+							hasCapability = false;
+							break;
+						}
+					}
+					if (hasCapability) {
+						// formatting data in Lux in SI units
+						var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),
+													 UVIndex:data.readUInt16LE()}
+						CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","UVIndex",json_data));// pushing the data to cloud
+						console.log(json_data);
+					}
 				});
 			});		
 		});
