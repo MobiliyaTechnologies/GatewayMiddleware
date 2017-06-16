@@ -50,7 +50,7 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 					// the value can be scaled as per the requirement by editing the above line 
 					//var json_XYZ = {x:data.split(' ')[0],y:data.split(' ')[1],z:zValue}// formatting raw data 
 					console.log("XDK Accelerometer Data-- data event> ",	data.toString('utf-8'));
-					CloudAdaptor(DataWrapper(peripheral.id,"Bosch-XDK","Accelerometer",json_XYZ));// pushing the data to cloud
+					CloudAdaptor(DataWrapper(peripheral.id,"Bosch-XDK","Accelerometer",json_data));// pushing the data to cloud
 					//console.log(json_data);
 				});
 				//Writing data to the characteristic to start accelerometer sampling
