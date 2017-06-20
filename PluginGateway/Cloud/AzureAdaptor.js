@@ -55,6 +55,7 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 			cb();
 			client.on('message', function (msg) {
 				console.log('Message Received ! Id: ' + msg.messageId + ' Body: ' + msg.data + ' PropertyList:  ', msg.properties.propertyList[0]);
+				if (msg.properties.propertyList[0] != undefined) {
 					if (isJSON((msg.data).toString())) {
 						console.log("JSON");
 						//console.log((msg.data).toString());
@@ -65,7 +66,7 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 							saveData((msg.data).toString(), status);
 						}
 					}
-				
+				}
 			  // When using MQTT the following line is a no-op.
 			  client.complete(msg, printResultFor('completed'));
 			  // The AMQP and HTTP transports also have the notion of completing, rejecting or abandoning the message.
