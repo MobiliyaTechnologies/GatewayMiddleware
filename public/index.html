@@ -240,6 +240,10 @@
                     }).then(function (response) {
                        
 						$scope.getConnectionStr(response.data);
+				  		setTimeout(function(){
+							$scope.getConnectionStr(response.data);
+						},3000);
+						
                     })
                         .catch(function (error) {
                             

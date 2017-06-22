@@ -51,9 +51,10 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 		  if (err) {
 			console.error('Could not connect: ' + err.message);
 		  } else {
-			console.log('azure iot sdk connected');
+			console.log('Azure Iot Sdk Connected');
 			cb();
 			client.on('message', function (msg) {
+				console.log("CloudToDevice Message Received");
 				console.log('Message Received ! Id: ' + msg.messageId + ' Body: ' + msg.data + ' PropertyList:  ', msg.properties.propertyList[0]);
 				if (msg.properties.propertyList[0] != undefined) {
 					if (isJSON((msg.data).toString())) {
