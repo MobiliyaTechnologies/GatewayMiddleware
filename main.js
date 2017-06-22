@@ -2,7 +2,7 @@
 //      rest all device specific libraries are plugin for more information go to specific imports
 var noble = require('noble');
 var config = require('./config');
-var localServer = require('./LocalServer');
+//var localServer = require('./LocalServer');
 var SensorTag2650 = require('./PluginGateway/Bluetooth/SensorTag2650');
 var SensorTag1350 = require('./PluginGateway/Bluetooth/SensorTag1350');
 var ThunderboardReact = require('./PluginGateway/Bluetooth/ThunderReact');
