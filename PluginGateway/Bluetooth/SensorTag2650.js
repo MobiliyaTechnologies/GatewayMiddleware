@@ -20,53 +20,6 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			
 		});
 		peripheral.once('servicesDiscover', function(services){ //on service discovery
-			/*
-			var TemperatureService = services[3];
-			TemperatureService.discoverCharacteristics(null,function(error,characteristics) {// characteristic discovery
-				console.log('discovered the following characteristics:');
-				for ( var i in characteristics) {
-					console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
-				}
-			});
-			
-			TemperatureService.once('characteristicsDiscover', function(characteristics){// on characteristic discover
-				var startSamplingTemperatureData = characteristics[1];
-				var notifyServiceTemperatureData = characteristics[0];
-				//	notifyServiceAccelerometerData.setMaxListeners(100);
-				
-				notifyServiceTemperatureData.on('data', function(data,isNotification) {// notification events form temperature service
-					//var dataLSB = data.readUInt8BE(1);
-					//var dataMSB0 = data.readUInt8BE(2);
-					//var dataMSB1 = data.readUInt8BE(3);
-					//console.log(data);
-					
-					var capId = 0;
-					for(var item in SensorDetails.SensorCapabilities) {
-						if(SensorDetails.SensorCapabilities[item].Name == "Temperature") {
-							capId = SensorDetails.SensorCapabilities[item].Id;
-						}
-					}
-					//GroupId:SensorDetails.GroupId,
-					
-					// formatting data in degree celsius in SI units
-					var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),Temperature:(data.readUInt16LE(2,3)/128.0)};
-					
-					console.log("SensorTag2650 Temperature :",data.readUInt16LE(2,3)/128.0);
-					CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Temperature",json_data));// pushing the data to cloud
-				});
-				
-				var writeData = new Buffer([0x01]);
-				notifyServiceTemperatureData.subscribe(function(error) { // enabling notifications for temperature service
-					console.log('Subscription for notification enabled ',error);
-					notifyServiceTemperatureData.notify(true, function(){// starting notifications
-						startSamplingTemperatureData.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
-							console.log('starting Temperature Sampling',error);
-						});
-					});
-				});
-			});
-			*/
-			
 			// Temperature
 			var capIdTemperature = -1;
 			for(var item in SensorDetails.SensorCapabilities) {
@@ -258,11 +211,6 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					
 					notifyServiceMPU9250Data.on('data', function(data,isNotification) { // notification events form temperature service
 						
-						console.log("***************************");
-						console.log("***************************");
-						console.log("MPU9250: ", data.readInt16LE().toString());
-						
-						
 						convertMPU9250Data(data, function(xA, yA, zA, xG, yG, zG, xM, yM, zM) {
 							var accelData = false;
 							var magnData = false;
@@ -311,7 +259,6 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 				});
 			}
 			
-			
 			// Luxometer
 			var capIdLuxometer = -1;
 			for(var item in SensorDetails.SensorCapabilities) {
@@ -359,7 +306,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					});
 				});
 			}
-			//------------
+	
 		});
 	});
 };

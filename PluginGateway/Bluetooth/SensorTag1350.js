@@ -212,11 +212,6 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 					
 					notifyServiceMPU9250Data.on('data', function(data,isNotification) { // notification events form temperature service
 						
-						console.log("***************************");
-						console.log("***************************");
-						console.log("MPU9250: ", data.readInt16LE().toString());
-						
-						
 						convertMPU9250Data(data, function(xA, yA, zA, xG, yG, zG, xM, yM, zM) {
 							var accelData = false;
 							var magnData = false;
@@ -233,7 +228,7 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 									}
 								} else if(SensorDetails.SensorCapabilities[item].Name == "Magnetometer") {
 									var capId = SensorDetails.SensorCapabilities[item].Id;
-									// data in G
+									// data in μT
 									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),x:xM,y:yM,z:zM};
 									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag1350","Magnetometer",json_data)); // pushing the data to cloud
 									magnData = true;
@@ -242,7 +237,7 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 									}
 								} else if(SensorDetails.SensorCapabilities[item].Name == "Gyroscope") {
 									var capId = SensorDetails.SensorCapabilities[item].Id;
-									// data in G
+									// data in  °/s
 									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),x:xG,y:yG,z:zG};
 									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag1350","Gyroscope",json_data)); // pushing the data to cloud
 									gyroData = true;
@@ -253,19 +248,24 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 							}
 						});
 					});
-					var writeData = new Buffer([0x01]);
+					
+					var withoutResponse = (startSamplingMPU9250Data.properties.indexOf('writeWithoutResponse') !== -1) &&
+											  (startSamplingMPU9250Data.properties.indexOf('write') === -1);
+					var writeData = new Buffer(2);
+					writeData.writeUInt16LE(0x007f, 0)
+					//var writeData = new Buffer([0x0007f]);
 					notifyServiceMPU9250Data.subscribe(function(error) { // enabling notifications for MPU9250 service
-						console.log('Subscription for notification enabled ',error);
+						console.log('Subscription for MPU9250 notification enabled ',error);
 						notifyServiceMPU9250Data.notify(true, function(){ // starting notifications
-							startSamplingMPU9250Data.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
+							//startSamplingMPU9250Data.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
+							startSamplingMPU9250Data.write(writeData,withoutResponse,function(error) { //writing data to start notifications
 								console.log('starting MPU9250 Sampling',error);
 							});
 						});
 					});
 				});
 			}
-			
-			
+						
 			// Luxometer
 			var capIdLuxometer = -1;
 			for(var item in SensorDetails.SensorCapabilities) {
