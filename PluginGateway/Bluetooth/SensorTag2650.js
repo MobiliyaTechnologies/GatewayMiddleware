@@ -19,16 +19,39 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			}
 			
 		});
-		peripheral.once('servicesDiscover', function(services){ //on service discovery
-			// Temperature
-			var capIdTemperature = -1;
+		peripheral.once('servicesDiscover', function(services) { //on service discovery
+			var capIdAmbientTemperature = -1;
+			var capIdObjectTemperature = -1;
+			var capIdHumidity = -1;
+			var capIdBarometricPressure = -1;
+			var capIdAccelerometer = -1;
+			var capIdMagnetometer = -1;
+			var capIdGyroscope = -1;
+			var capIdLuxometer = -1;
 			for(var item in SensorDetails.SensorCapabilities) {
-				if(SensorDetails.SensorCapabilities[item].Name == "AmbientTemperature" || SensorDetails.SensorCapabilities[item].Name == "ObjectTemperature") {
-					capIdTemperature = SensorDetails.SensorCapabilities[item].Id;
+				if(SensorDetails.SensorCapabilities[item].Name == "AmbientTemperature") {
+					capIdAmbientTemperature = SensorDetails.SensorCapabilities[item].Id;
+				} else if(SensorDetails.SensorCapabilities[item].Name == "ObjectTemperature") {
+					capIdObjectTemperature = SensorDetails.SensorCapabilities[item].Id;
+				} else if(SensorDetails.SensorCapabilities[item].Name == "Humidity"){
+					capIdHumidity = SensorDetails.SensorCapabilities[item].Id;
+				} else if(SensorDetails.SensorCapabilities[item].Name == "BarometricPressure"){
+					capIdBarometricPressure = SensorDetails.SensorCapabilities[item].Id;
+				} else if(SensorDetails.SensorCapabilities[item].Name == "Accelerometer") {
+					capIdAccelerometer = SensorDetails.SensorCapabilities[item].Id;
+				} else if(SensorDetails.SensorCapabilities[item].Name == "Magnetometer") {
+					capIdMagnetometer = SensorDetails.SensorCapabilities[item].Id;
+				} else if(SensorDetails.SensorCapabilities[item].Name == "Gyroscope") {
+					capIdGyroscope = SensorDetails.SensorCapabilities[item].Id;
+				} else if(SensorDetails.SensorCapabilities[item].Name == "Luxometer"){
+					capIdLuxometer = SensorDetails.SensorCapabilities[item].Id;
+				}
+				if(capIdAmbientTemperature != -1 && capIdObjectTemperature != -1 && capIdHumidity != -1 && capIdBarometricPressure != -1 && capIdAccelerometer != -1 && capIdMagnetometer != -1 && capIdGyroscope != -1 && capIdLuxometer != -1) {
 					break;
 				}
 			}
-			if (capIdTemperature > -1) {			
+			// Temperature
+			if (capIdAmbientTemperature > -1 || capIdObjectTemperature > -1) {			
 				var TemperatureService = services[3]; // uuid: f000aa0004514000b000000000000000
 
 				TemperatureService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
@@ -46,31 +69,13 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					notifyServiceTemperatureData.on('data', function(data,isNotification) { // notification events form temperature service
 
 						convertIrTemperatureData(data, function(objectTemperature, ambientTemperature) {
-							//console.log("Object Temperature: ", objectTemperature);
-							//console.log("Ambient Temperature: ", ambientTemperature);
-							var ambTemp = false;
-							var objTemp = false;
-							for(var item in SensorDetails.SensorCapabilities) {
-								if(SensorDetails.SensorCapabilities[item].Name == "AmbientTemperature") {
-									var capId = SensorDetails.SensorCapabilities[item].Id;
-									// data in degree celsius in SI units
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),AmbientTemperature:ambientTemperature};
-									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","AmbientTemperature",json_data)); // pushing the data to cloud							
-									ambTemp = true;
-									if(ambTemp && objTemp) {
-										break;
-									}
-								}
-								if(SensorDetails.SensorCapabilities[item].Name == "ObjectTemperature") {
-									var capId = SensorDetails.SensorCapabilities[item].Id;
-									// data in degree celsius in SI units
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),ObjectTemperature:objectTemperature};
-									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","ObjectTemperature",json_data)); // pushing the data to cloud							
-									objTemp = true;
-									if(ambTemp && objTemp) {
-										break;
-									}
-								}
+							if(capIdAmbientTemperature > -1) {
+								var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientTemperature,GroupId:SensorDetails.GroupId,timestamp: new Date(),AmbientTemperature:ambientTemperature};
+								CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","AmbientTemperature",json_data)); // pushing the data to cloud							
+							}
+							if(capIdObjectTemperature > -1) {
+								var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdObjectTemperature,GroupId:SensorDetails.GroupId,timestamp: new Date(),ObjectTemperature:objectTemperature};
+								CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","ObjectTemperature",json_data)); // pushing the data to cloud							
 							}
 						});
 					});
@@ -88,13 +93,6 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			}
 			
 			// Humidity
-			var capIdHumidity = -1;
-			for(var item in SensorDetails.SensorCapabilities) {
-				if(SensorDetails.SensorCapabilities[item].Name == "Humidity") {
-					capIdHumidity = SensorDetails.SensorCapabilities[item].Id;
-					break;
-				}
-			}
 			if (capIdHumidity > -1) {			
 				var HumidityService = services[4]; // uuid: f000aa2004514000b000000000000000
 
@@ -112,17 +110,10 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 
 					notifyServiceHumidityData.on('data', function(data,isNotification) { // notification events form temperature service
 						convertHumidityData(data, function(ambientTemperature, humidity) {
-							//console.log("Ambient Temperature: ", ambientTemperature);
-							//console.log("Humidity: ", humidity);
-							for(var item in SensorDetails.SensorCapabilities) {
-								if(SensorDetails.SensorCapabilities[item].Name == "Humidity") {
-									var capId = SensorDetails.SensorCapabilities[item].Id;
-									// data in percentage
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),Humidity:humidity};
-									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Humidity",json_data)); // pushing the data to cloud
-									break;
-								}
-							}
+							
+							// data in percentage
+							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdHumidity,GroupId:SensorDetails.GroupId,timestamp: new Date(),Humidity:humidity};
+							CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Humidity",json_data)); // pushing the data to cloud
 						});
 					});
 					var writeData = new Buffer([0x01]);
@@ -138,13 +129,6 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			}
 			
 			// Barometric Pressure
-			var capIdBarometricPressure = -1;
-			for(var item in SensorDetails.SensorCapabilities) {
-				if(SensorDetails.SensorCapabilities[item].Name == "BarometricPressure") {
-					capIdBarometricPressure = SensorDetails.SensorCapabilities[item].Id;
-					break;
-				}
-			}
 			if (capIdBarometricPressure > -1) {			
 				var BarometricPressureService = services[5]; // uuid: f000aa4004514000b000000000000000
 
@@ -163,15 +147,9 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					notifyServiceBarometricPressureData.on('data', function(data,isNotification) { // notification events form temperature service
 						convertBarometricPressureData(data, function(barometricPressure) {
 							//console.log("Barometric Pressure: ", barometricPressure);
-							for(var item in SensorDetails.SensorCapabilities) {
-								if(SensorDetails.SensorCapabilities[item].Name == "BarometricPressure") {
-									var capId = SensorDetails.SensorCapabilities[item].Id;
-									// data in mBar
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),BarometricPressure:barometricPressure};
-									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","BarometricPressure",json_data)); // pushing the data to cloud
-									break;
-								}
-							}
+							// data in mBar
+							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdBarometricPressure,GroupId:SensorDetails.GroupId,timestamp: new Date(),BarometricPressure:barometricPressure};
+							CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","BarometricPressure",json_data)); // pushing the data to cloud
 						});
 					});
 					var writeData = new Buffer([0x01]);
@@ -187,14 +165,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			}
 			
 			// MPU9250 (Accelerometer, Magnetometer, Gyroscope)
-			var capIdMPU9250 = -1;
-			for(var item in SensorDetails.SensorCapabilities) {
-				if(SensorDetails.SensorCapabilities[item].Name == "Accelerometer" || SensorDetails.SensorCapabilities[item].Name == "Magnetometer" || SensorDetails.SensorCapabilities[item].Name == "Gyroscope") {
-					capIdMPU9250 = SensorDetails.SensorCapabilities[item].Id;
-					break;
-				}
-			}
-			if (capIdMPU9250 > -1) {
+			if (capIdAccelerometer > -1 || capIdMagnetometer > -1 || capIdGyroscope > -1) {
 				var MPU9250Service = services[6]; // uuid: f000aa8004514000b000000000000000
 
 				MPU9250Service.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
@@ -212,46 +183,34 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					notifyServiceMPU9250Data.on('data', function(data,isNotification) { // notification events form temperature service
 						
 						convertMPU9250Data(data, function(xA, yA, zA, xG, yG, zG, xM, yM, zM) {
-							var accelData = false;
-							var magnData = false;
-							var gyroData = false;
-							for(var item in SensorDetails.SensorCapabilities) {
-								if(SensorDetails.SensorCapabilities[item].Name == "Accelerometer") {
-									var capId = SensorDetails.SensorCapabilities[item].Id;
-									// data in G
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),x:xA,y:yA,z:zA};
+							if(capIdAccelerometer > -1) {
+								// data in G
+									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAccelerometer,GroupId:SensorDetails.GroupId,timestamp: new Date(),x:xA,y:yA,z:zA};
 									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Accelerometer",json_data)); // pushing the data to cloud
-									accelData = true;
-									if(accelData && magnData && gyroData) {
-										break;
-									}
-								} else if(SensorDetails.SensorCapabilities[item].Name == "Magnetometer") {
-									var capId = SensorDetails.SensorCapabilities[item].Id;
-									// data in G
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),x:xM,y:yM,z:zM};
+							}
+							if(capIdMagnetometer > -1) {
+								// data in mT
+									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdMagnetometer,GroupId:SensorDetails.GroupId,timestamp: new Date(),x:xM,y:yM,z:zM};
 									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Magnetometer",json_data)); // pushing the data to cloud
-									magnData = true;
-									if(accelData && magnData && gyroData) {
-										break;
-									}
-								} else if(SensorDetails.SensorCapabilities[item].Name == "Gyroscope") {
-									var capId = SensorDetails.SensorCapabilities[item].Id;
-									// data in G
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),x:xG,y:yG,z:zG};
+							}
+							if (capIdGyroscope > -1) {
+								// data in degree/s
+									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdGyroscope,GroupId:SensorDetails.GroupId,timestamp: new Date(),x:xG,y:yG,z:zG};
 									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Gyroscope",json_data)); // pushing the data to cloud
-									gyroData = true;
-									if(accelData && magnData && gyroData) {
-										break;
-									}
-								}
 							}
 						});
 					});
-					var writeData = new Buffer([0x01]);
+					
+					
+					var buffer = new Buffer(2);
+					buffer.writeUInt16LE(0x007f, 0);
+					var withoutResponse = (startSamplingMPU9250Data.properties.indexOf('writeWithoutResponse') !== -1) &&
+                          (startSamplingMPU9250Data.properties.indexOf('write') === -1);
+					
 					notifyServiceMPU9250Data.subscribe(function(error) { // enabling notifications for MPU9250 service
 						console.log('Subscription for notification enabled ',error);
 						notifyServiceMPU9250Data.notify(true, function(){ // starting notifications
-							startSamplingMPU9250Data.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
+							startSamplingMPU9250Data.write(buffer,withoutResponse,function(error) { //writing data to start notifications
 								console.log('starting MPU9250 Sampling',error);
 							});
 						});
@@ -260,13 +219,6 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			}
 			
 			// Luxometer
-			var capIdLuxometer = -1;
-			for(var item in SensorDetails.SensorCapabilities) {
-				if(SensorDetails.SensorCapabilities[item].Name == "Luxometer") {
-					capIdLuxometer = SensorDetails.SensorCapabilities[item].Id;
-					break;
-				}
-			}
 			if (capIdLuxometer > -1) {			
 				var LuxometerService = services[7]; // uuid: f000aa7004514000b000000000000000
 
@@ -284,15 +236,9 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					
 					notifyServiceLuxometerData.on('data', function(data,isNotification) { // notification events form temperature service
 						convertLuxometerData(data, function(lux) {
-							for(var item in SensorDetails.SensorCapabilities) {
-								if(SensorDetails.SensorCapabilities[item].Name == "Luxometer") {
-									var capId = SensorDetails.SensorCapabilities[item].Id;
-									// data in lux
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,timestamp: new Date(),Luxometer:lux};
-									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Luxometer",json_data)); // pushing the data to cloud
-									break;
-								}
-							}
+							// data in lux
+							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdLuxometer,GroupId:SensorDetails.GroupId,timestamp: new Date(),Luxometer:lux};
+							CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Luxometer",json_data)); // pushing the data to cloud
 						});
 					});
 					var writeData = new Buffer([0x01]);
