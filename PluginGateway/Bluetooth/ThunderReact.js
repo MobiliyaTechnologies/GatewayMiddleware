@@ -78,7 +78,7 @@ ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudA
 					break;
 				}
 			}
-			/*
+			
 			if (capIdAccelerometer > -1 || capIdGyroscope > -1) {		
 				var AccelerometerOrientationService = services[8]; //uuid: 0xa4e649f4-4be5-11e5-885d-feff819cdc9f
 
@@ -123,7 +123,7 @@ ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudA
 					}
 				});
 			}
-			*/
+			
 			if (capIdAmbientLight > -1) {	
 				var AmbientLightService = services[7];	//uuid: 0xd24c4f4e-17a7-4548-852c-abf51127368b
 				AmbientLightService.discoverCharacteristics(null,function(error,characteristics) {
