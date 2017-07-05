@@ -136,7 +136,7 @@ var saveData = function(msg, status) {
 				}
 			}
 			console.log('writing file');
-			console.log(JSON.stringify(obj));
+			//console.log(JSON.stringify(obj));
 			jsonfile.writeFile(file, obj, function (err) {
 			    if(err) {
 				    console.error(err);
