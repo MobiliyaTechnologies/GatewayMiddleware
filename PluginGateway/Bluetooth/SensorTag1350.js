@@ -1,5 +1,27 @@
 function SensorTag1350 () { };//class for SensorTag1350
-SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,DataWrapper, SensorDetails){ // sensor tag 1350 handle
+/*disconnectSensorTag1350 = function(peripheral) {
+	peripheral.disconnect(function(error){
+		console.log("disconnectSensorTag1350 : ", new Date());
+		console.log(peripheral.uuid + " Disconnected")
+	});
+};
+*/
+SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities){ // sensor tag 1350 handle
+	console.log("SensorTag1350.prototype.SensorTagHandle1350 : ", new Date());
+	//setTimeout(disconnectSensorTag1350, 3000, peripheral);
+	
+	var AmbientTempUnit = "Celsius";
+	var ObjectTempUnit = "Celsius";
+	
+	Capabilities.forEach(function(elem, index) {
+		if (elem.Name == "AmbientTemperature") {
+			AmbientTempUnit = elem.Unit;
+		} else if (elem.Name == "ObjectTemperature") {
+			ObjectTempUnit = elem.Unit;
+		}	
+	});
+	console.log("Temperature Unit (Ambient, Object): ", AmbientTempUnit, ObjectTempUnit);
+	
 	peripheral.connect(function(error) { //connect
 		if(error) {
 			console.log("Error in connection with peripheral (SensorTag1350): " + peripheral);
@@ -73,7 +95,7 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 
 					notifyServiceTemperatureData.on('data', function(data,isNotification) { // notification events form temperature service
 
-						convertIrTemperatureData(data, function(objectTemperature, ambientTemperature) {
+						convertIrTemperatureData(data, AmbientTempUnit, ObjectTempUnit, function(objectTemperature, ambientTemperature) {
 							if(capIdAmbientTemperature > -1) {
 								var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 												 AssetBarcode:SensorDetails.AssetBarcode,AmbientTemperature:ambientTemperature};
@@ -267,9 +289,20 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 	});
 };
 
-convertIrTemperatureData = function(data, callback) {
-	var ambientTemperature = data.readInt16LE(2) / 128.0;
-	var objectTemperature = data.readInt16LE(0) / 128.0;
+convertIrTemperatureData = function(data, AmbientTempUnit, ObjectTempUnit, callback) {
+	var ambientTemperature = data.readInt16LE(2) / 128.0;	//Celsius
+	var objectTemperature = data.readInt16LE(0) / 128.0;	//Celsius
+	
+	if (AmbientTempUnit == "Fahrenheit") {
+		ambientTemperature = (ambientTemperature * 1.8) + 32;
+	} else if(AmbientTempUnit == "Kelvin") {
+		ambientTemperature = ambientTemperature + 273.15;
+	}
+	if (ObjectTempUnit == "Fahrenheit") {
+		objectTemperature = (objectTemperature * 1.8) + 32;
+	} else if(ObjectTempUnit == "Kelvin") {
+		objectTemperature = objectTemperature + 273.15;
+	}
   	callback(objectTemperature, ambientTemperature);
 };
 
@@ -320,7 +353,6 @@ convertLuxometerData = function(data, callback) {
 
   callback(flLux);
 };
-
 
 convertMPU9250Data = function(data, callback) {
 	try {

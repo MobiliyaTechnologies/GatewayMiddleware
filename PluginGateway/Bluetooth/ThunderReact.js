@@ -1,7 +1,7 @@
 function ThunderboardReact () { };//class for thunderboard react
 var EnvironInterval;
 var LightInterval;
-function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,SensorDetails,capIdHumidity,capIdTemperature,capIdUVIndex) {
+function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,SensorDetails,capIdHumidity,capIdTemperature,capIdUVIndex,AmbientTempUnit) {
 	if (capIdHumidity > -1) {
 		Humidity.read(function(err,data){
 			// formatting data in RH in SI units
@@ -15,8 +15,13 @@ function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperatu
 		Temperature.read(function(err,data){
 				// formatting data in degree celsius in SI units
 			var val = parseFloat(data.readUInt16LE().toString().slice(0,2)+"."+data.readUInt16LE().toString().slice(2,4));
+			if (AmbientTempUnit == "Fahrenheit") {
+				val = (val * 1.8) + 32;
+			} else if(AmbientTempUnit == "Kelvin") {
+				val = val + 273.15;
+			}
 			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-							 AssetBarcode:SensorDetails.AssetBarcode,Temperature:val};
+							 AssetBarcode:SensorDetails.AssetBarcode,AmbientTemperature:val};
 			CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-React","AmbientTemperature",json_data));
 		});
 	}
@@ -42,7 +47,16 @@ function readAmbientLight(peripheral,CloudAdaptor,DataWrapper,AmbientLight,Senso
 	}
 };
 
-ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails){
+ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities){
+	
+	var AmbientTempUnit = "Celsius";
+	
+	Capabilities.forEach(function(elem, index) {
+		if (elem.Name == "AmbientTemperature") {
+			AmbientTempUnit = elem.Unit;
+		}	
+	});
+	
 	peripheral.connect(function(error) {
 		if(error) {
 			console.log("Error in connection with peripheral (ThunderBoard-React): " + peripheral);
@@ -163,7 +177,7 @@ ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudA
 					var UVIndex = characteristics[2];
 					
 					EnvironInterval = setInterval(function (){
-						readEnvironment(peripheral,CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,SensorDetails,capIdHumidity,capIdTemperature,capIdUVIndex)
+						readEnvironment(peripheral,CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,SensorDetails,capIdHumidity,capIdTemperature,capIdUVIndex,AmbientTempUnit)
 					},5000);
 
 				});

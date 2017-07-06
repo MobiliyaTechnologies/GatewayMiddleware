@@ -1,5 +1,5 @@
 function XDK () { };//class for XDK
-XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails){// XDK handle
+XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,Capabilities){// XDK handle
 	peripheral.connect(function(error) {
 		if(error) {
 			console.log("Error in connection with peripheral (Bosch-XDK): " + peripheral);

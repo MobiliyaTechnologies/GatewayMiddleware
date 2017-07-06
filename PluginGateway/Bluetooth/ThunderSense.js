@@ -1,7 +1,7 @@
 function ThunderboardSense () { };//class for thunderboard sense
 var EnvironInterval;
 var LightInterval;
-function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,AmbientLight,BarometricPressure,NoiseLevel,SensorDetails,capIdHumidity,capIdTemperature,capIdUVIndex,capIdAmbientLight,capIdBarometricPressure,capIdNoiseLevel) {
+function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,AmbientLight,BarometricPressure,NoiseLevel,SensorDetails,capIdHumidity,capIdTemperature,capIdUVIndex,capIdAmbientLight,capIdBarometricPressure,capIdNoiseLevel,AmbientTempUnit) {
 	
 	if(capIdUVIndex > -1) {
 		UVIndex.read(function(err,data){
@@ -23,8 +23,13 @@ function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperatu
 		Temperature.read(function(err,data){
 				// formatting data in degree celsius in SI units
 			var val = parseFloat(data.readUInt16LE().toString().slice(0,2)+"."+data.readUInt16LE().toString().slice(2,4));
+			if (AmbientTempUnit == "Fahrenheit") {
+				val = (val * 1.8) + 32;
+			} else if(AmbientTempUnit == "Kelvin") {
+				val = val + 273.15;
+			}
 			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-							 AssetBarcode:SensorDetails.AssetBarcode,Temperature:val};
+							 AssetBarcode:SensorDetails.AssetBarcode,AmbientTemperature:val};
 			CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","AmbientTemperature",json_data));
 		});
 	}
@@ -55,7 +60,16 @@ function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperatu
 	}
 };
 
-ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails){
+ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities){
+	
+	var AmbientTempUnit = "Celsius";
+	
+	Capabilities.forEach(function(elem, index) {
+		if (elem.Name == "AmbientTemperature") {
+			AmbientTempUnit = elem.Unit;
+		}	
+	});
+	
 	peripheral.connect(function(error) {
 		if(error) {
 			console.log("Error in connection with peripheral (ThunderBoard-Sense): " + peripheral);
@@ -173,7 +187,8 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 					var NoiseLevel = characteristics[5];				   //c8546913bf0245eb8dde9f8754f4a32e
 					
 					EnvironInterval = setInterval(function (){
-						readEnvironment(peripheral,CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,AmbientLight,BarometricPressure,NoiseLevel,SensorDetails,capIdHumidity,capIdTemperature,capIdUVIndex,capIdAmbientLight,capIdBarometricPressure,capIdNoiseLevel)
+						readEnvironment(peripheral,CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,AmbientLight,BarometricPressure,NoiseLevel,SensorDetails,capIdHumidity,
+										capIdTemperature,capIdUVIndex,capIdAmbientLight,capIdBarometricPressure,capIdNoiseLevel,AmbientTempUnit)
 					},5000);
 
 				});

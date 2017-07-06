@@ -21,6 +21,8 @@ var allowDuplicates = false;
 var jsonfile = require('jsonfile')
 var sensorListFile = 'sensorlist.json';
 var bus = require('./eventbus');
+var capabilitiesFile = 'capabilities.json';
+var Capabilities;
 
 
 //Create an event handler:
@@ -43,7 +45,22 @@ function updateSensorList() {
 	});
 }
 
+function getSensorUnit() {
+	console.log('getSensorUnit');	
+	jsonfile.readFile(capabilitiesFile, function(err, obj) {
+		if (err) {
+		 console.log("Unabel to read capabilitiesFile !!");
+		 console.log(err);
+		} else {
+			console.log("getSensorUnit capabilities");
+			Capabilities = obj;	
+			console.log(JSON.stringify(Capabilities));
+		}
+	});
+}
+
 updateSensorList();
+getSensorUnit();
 
 //Assign the event handler to an event:
 bus.on('updatelist', myUpdateEventHandler);
@@ -96,28 +113,28 @@ function BLEApp (){
 				var ST_2650_DS = new SensorDataStructure();
 				var ST_2650_CloudAdaptor = new CloudAdaptor();
 				var ST_2650_Handle = new SensorTag2650();
-				ST_2650_Handle.SensorTagHandle2650(peripheral,ST_2650_CloudAdaptor.AzureHandle,ST_2650_DS.JSON_data,whitelistContentAll[SensorId]);
+				ST_2650_Handle.SensorTagHandle2650(peripheral,ST_2650_CloudAdaptor.AzureHandle,ST_2650_DS.JSON_data,whitelistContentAll[SensorId],Capabilities);
 			}else if (whitelistContentAll[SensorId].SensorType == "SensorTag1350"){
 				var ST1350_DS = new SensorDataStructure();
 				var ST1350_CloudAdaptor = new CloudAdaptor();
 				var ST1350_Handle = new SensorTag1350();
-				ST1350_Handle.SensorTagHandle1350(peripheral,ST1350_CloudAdaptor.AzureHandle,ST1350_DS.JSON_data,whitelistContentAll[SensorId]);
+				ST1350_Handle.SensorTagHandle1350(peripheral,ST1350_CloudAdaptor.AzureHandle,ST1350_DS.JSON_data,whitelistContentAll[SensorId],Capabilities);
 			}else if (whitelistContentAll[SensorId].SensorType == "Bosch-XDK"){
 				var XDK_DS = new SensorDataStructure();
 				var XDK_CloudAdaptor = new CloudAdaptor();
 				var XDK_Handle = new XDK();
-				XDK_Handle.XDKHandle(peripheral,XDK_CloudAdaptor.AzureHandle,XDK_DS.JSON_data,whitelistContentAll[SensorId]);
+				XDK_Handle.XDKHandle(peripheral,XDK_CloudAdaptor.AzureHandle,XDK_DS.JSON_data,whitelistContentAll[SensorId],Capabilities);
 			}else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-React"){
 			//if (peripheral.id == "000b571c53ae"){ // for testing the sensor locally without whitelisting
 				var ThunderboardReact_DS = new SensorDataStructure();
 				var ThunderboardReact_CloudAdaptor = new CloudAdaptor();
 				var ThunderboardReact_Handle = new ThunderboardReact();
-				ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,ThunderboardReact_CloudAdaptor.AzureHandle,ThunderboardReact_DS.JSON_data,whitelistContentAll[SensorId]);
+				ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,ThunderboardReact_CloudAdaptor.AzureHandle,ThunderboardReact_DS.JSON_data,whitelistContentAll[SensorId],Capabilities);
 			}else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-Sense"){
 				var ThunderboardSense_DS = new SensorDataStructure();
 				var ThunderboardSense_CloudAdaptor = new CloudAdaptor();
 				var ThunderboardSense_Handle = new ThunderboardSense();
-				ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,ThunderboardSense_CloudAdaptor.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId]);
+				ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,ThunderboardSense_CloudAdaptor.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId],Capabilities);
 			}else{
 			//console.log(peripheral);
 			// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found
