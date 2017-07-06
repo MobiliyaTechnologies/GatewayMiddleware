@@ -2,6 +2,11 @@
 function SensorTag2650() { };//class method for sesnortag 2650
 SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails){// sensor tag 2650 handle
 	peripheral.connect(function(error) {
+		if(error) {
+			console.log("Error in connection with peripheral (SensorTag2650): " + peripheral);
+			console.log(error);
+			return;
+		}
 		console.log('connected to peripheral (SensorTag2650): '	+ peripheral.uuid);
 		process.on('SIGINT', function() {
 			console.log("Caught interrupt signal");
@@ -70,11 +75,13 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 
 						convertIrTemperatureData(data, function(objectTemperature, ambientTemperature) {
 							if(capIdAmbientTemperature > -1) {
-								var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientTemperature,GroupId:SensorDetails.GroupId,timestamp: new Date(),AmbientTemperature:ambientTemperature};
+								var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+												 AssetBarcode:SensorDetails.AssetBarcode,AmbientTemperature:ambientTemperature};
 								CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","AmbientTemperature",json_data)); // pushing the data to cloud							
 							}
 							if(capIdObjectTemperature > -1) {
-								var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdObjectTemperature,GroupId:SensorDetails.GroupId,timestamp: new Date(),ObjectTemperature:objectTemperature};
+								var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdObjectTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+												 ObjectTemperature:objectTemperature};
 								CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","ObjectTemperature",json_data)); // pushing the data to cloud							
 							}
 						});
@@ -112,7 +119,8 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 						convertHumidityData(data, function(ambientTemperature, humidity) {
 							
 							// data in percentage
-							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdHumidity,GroupId:SensorDetails.GroupId,timestamp: new Date(),Humidity:humidity};
+							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdHumidity,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+											 AssetBarcode:SensorDetails.AssetBarcode,Humidity:humidity};
 							CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Humidity",json_data)); // pushing the data to cloud
 						});
 					});
@@ -148,7 +156,8 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 						convertBarometricPressureData(data, function(barometricPressure) {
 							//console.log("Barometric Pressure: ", barometricPressure);
 							// data in mBar
-							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdBarometricPressure,GroupId:SensorDetails.GroupId,timestamp: new Date(),BarometricPressure:barometricPressure};
+							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdBarometricPressure,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+											 AssetBarcode:SensorDetails.AssetBarcode,BarometricPressure:barometricPressure};
 							CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","BarometricPressure",json_data)); // pushing the data to cloud
 						});
 					});
@@ -185,17 +194,20 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 						convertMPU9250Data(data, function(xA, yA, zA, xG, yG, zG, xM, yM, zM) {
 							if(capIdAccelerometer > -1) {
 								// data in G
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAccelerometer,GroupId:SensorDetails.GroupId,timestamp: new Date(),x:xA,y:yA,z:zA};
+									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAccelerometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+													 AssetBarcode:SensorDetails.AssetBarcode,x:xA,y:yA,z:zA};
 									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Accelerometer",json_data)); // pushing the data to cloud
 							}
 							if(capIdMagnetometer > -1) {
 								// data in mT
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdMagnetometer,GroupId:SensorDetails.GroupId,timestamp: new Date(),x:xM,y:yM,z:zM};
+									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdMagnetometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+													 AssetBarcode:SensorDetails.AssetBarcode,x:xM,y:yM,z:zM};
 									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Magnetometer",json_data)); // pushing the data to cloud
 							}
 							if (capIdGyroscope > -1) {
 								// data in degree/s
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdGyroscope,GroupId:SensorDetails.GroupId,timestamp: new Date(),x:xG,y:yG,z:zG};
+									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdGyroscope,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+													 AssetBarcode:SensorDetails.AssetBarcode,x:xG,y:yG,z:zG};
 									CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Gyroscope",json_data)); // pushing the data to cloud
 							}
 						});
@@ -237,7 +249,8 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					notifyServiceLuxometerData.on('data', function(data,isNotification) { // notification events form temperature service
 						convertLuxometerData(data, function(lux) {
 							// data in lux
-							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdLuxometer,GroupId:SensorDetails.GroupId,timestamp: new Date(),Luxometer:lux};
+							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdLuxometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+											 AssetBarcode:SensorDetails.AssetBarcode,Luxometer:lux};
 							CloudAdaptor(DataWrapper(peripheral.id,"SensorTag2650","Luxometer",json_data)); // pushing the data to cloud
 						});
 					});

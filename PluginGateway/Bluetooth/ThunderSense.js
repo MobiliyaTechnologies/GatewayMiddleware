@@ -6,15 +6,16 @@ function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperatu
 	if(capIdUVIndex > -1) {
 		UVIndex.read(function(err,data){
 			// formatting data in Scale (int) in SI units
-			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdUVIndex,GroupId:SensorDetails.GroupId,timestamp: new Date(),UVIndex:(data.readUInt8())};
+			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdUVIndex,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+							 AssetBarcode:SensorDetails.AssetBarcode,UVIndex:(data.readUInt8())};
 			CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","UVIndex",json_data));
 		});
 	}
 	if (capIdBarometricPressure > -1) {	
 		BarometricPressure.read(function(err,data){
 			// formatting data in mBar in SI units
-			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdBarometricPressure,GroupId:SensorDetails.GroupId,timestamp: new Date(),
-				BarometricPressure:(data.readUInt16LE(0)/1000)};
+			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdBarometricPressure,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+				AssetBarcode:SensorDetails.AssetBarcode,BarometricPressure:(data.readUInt16LE(0)/1000)};
 			CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","BarometricPressure",json_data));// pushing the data to cloud
 		});
 	}
@@ -22,7 +23,8 @@ function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperatu
 		Temperature.read(function(err,data){
 				// formatting data in degree celsius in SI units
 			var val = parseFloat(data.readUInt16LE().toString().slice(0,2)+"."+data.readUInt16LE().toString().slice(2,4));
-			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdTemperature,GroupId:SensorDetails.GroupId,timestamp: new Date(),Temperature:val};
+			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+							 AssetBarcode:SensorDetails.AssetBarcode,Temperature:val};
 			CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","AmbientTemperature",json_data));
 		});
 	}
@@ -30,23 +32,24 @@ function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperatu
 		Humidity.read(function(err,data){
 			// formatting data in RH in SI units
 			var val = parseFloat(data.readUInt16LE().toString().slice(0,2)+"."+data.readUInt16LE().toString().slice(2,4));
-			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdHumidity,GroupId:SensorDetails.GroupId,timestamp: new Date(),Humidity:val};
+			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdHumidity,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+							 AssetBarcode:SensorDetails.AssetBarcode,Humidity:val};
 			CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","Humidity",json_data));
 		});
 	}
 	if (capIdAmbientLight > -1) {	
 		AmbientLight.read(function(err,data){
 			// formatting data in Lux in SI units
-			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientLight,GroupId:SensorDetails.GroupId,timestamp: new Date(),
-						Luxometer:(Math.floor(data.readUInt32LE(0)/100))};
+			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientLight,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+						AssetBarcode:SensorDetails.AssetBarcode,Luxometer:(Math.floor(data.readUInt32LE(0)/100))};
 			CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","Luxometer",json_data));
 		});
 	}
 	if (capIdNoiseLevel > -1) {	
 		NoiseLevel.read(function(err,data){
 			// formatting data in db in SI units
-			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdNoiseLevel,GroupId:SensorDetails.GroupId,timestamp: new Date(),
-				NoiseLevel:(data.readUInt16LE()/100)}
+			var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdNoiseLevel,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+				AssetBarcode:SensorDetails.AssetBarcode,NoiseLevel:(data.readUInt16LE()/100)}
 			CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","NoiseLevel",json_data));// pushing the data to cloud
 		});
 	}
@@ -54,7 +57,13 @@ function readEnvironment (peripheral,CloudAdaptor,DataWrapper,Humidity,Temperatu
 
 ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails){
 	peripheral.connect(function(error) {
-		console.log('connected to peripheral: '	+ peripheral.uuid);
+		if(error) {
+			console.log("Error in connection with peripheral (ThunderBoard-Sense): " + peripheral);
+			console.log(error);
+			return;
+		}
+		
+		console.log('connected to peripheral (ThunderBoard-Sense): '	+ peripheral.uuid);
 
 		peripheral.discoverServices([],function(error, services) {
 			//console.log('discovered the following services:',services);
@@ -115,8 +124,8 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 
 						Orientation.on('data', function(data,isNotification) {
 							// formatting data
-							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdGyroscope,GroupId:SensorDetails.GroupId,timestamp: new Date(),
-										 x:Math.floor((data.readInt16LE(0,1))/100),y:Math.floor((data.readInt16LE(2,3))/100),z:Math.floor((data.readInt16LE(4,5))/100)}// formatting data
+							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdGyroscope,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+										 AssetBarcode:SensorDetails.AssetBarcode,x:Math.floor((data.readInt16LE(0,1))/100),y:Math.floor((data.readInt16LE(2,3))/100),z:Math.floor((data.readInt16LE(4,5))/100)}// formatting data
 							CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","Gyroscope",json_data));// pushing the data to cloud
 						});
 						Orientation.subscribe(function(error) {
@@ -130,8 +139,8 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 						var Accelerometer = characteristics[0];
 						Accelerometer.on('data', function(data,isNotification) {
 							// formatting data
-							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAccelerometer,GroupId:SensorDetails.GroupId,timestamp: new Date(),
-											 x:Math.floor((data.readInt16LE(0,1))/100),y:Math.floor((data.readInt16LE(2,3))/100),z:Math.floor((data.readInt16LE(4,5))/100)}// formatting data
+							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAccelerometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+											 AssetBarcode:SensorDetails.AssetBarcode,x:Math.floor((data.readInt16LE(0,1))/100),y:Math.floor((data.readInt16LE(2,3))/100),z:Math.floor((data.readInt16LE(4,5))/100)}// formatting data
 							CloudAdaptor(DataWrapper(peripheral.id,"ThundeBoard-Sense","Accelerometer",json_data));// pushing the data to cloud
 						});
 						Accelerometer.subscribe(function(error) {
