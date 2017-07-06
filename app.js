@@ -43,6 +43,16 @@ app.post('/connectionstring', function (req, res) {
 	require('./main');
   	res.sendStatus(200);
 })
+app.post('/capabilities', function (req, res) {
+	console.log(req.body);
+	capabilities = req.body.capabilities;
+	console.log(capabilities);
+	fs.writeFile('./capabilities.json', capabilities , 'utf-8');
+
+	//require('./main');
+  	res.sendStatus(200);
+})
+
 var server = app.listen(app.get('port'), function() {
   var port = server.address().port;
   console.log('Login page running on port ' + port);

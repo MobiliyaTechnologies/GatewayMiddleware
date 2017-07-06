@@ -1,5 +1,18 @@
 function SensorTag1350 () { };//class for SensorTag1350
+SensorTag1350DisconnectHandler = function(peripheral) {
+	peripheral.disconnect(function(error){
+		if (error) {
+			console.log(peripheral.uuid + " Disconnect error");
+			console.log(error);
+		} else {
+			console.log(peripheral.uuid + " Disconnected")
+		}
+	});
+};
+
 SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,DataWrapper, SensorDetails){ // sensor tag 1350 handle
+	
+	setTimeout(SensorTag1350DisconnectHandler,3000, peripheral);
 	peripheral.connect(function(error) { //connect
 		if(error) {
 			console.log("Error in connection with peripheral (SensorTag1350): " + peripheral);
@@ -11,7 +24,13 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 		process.on('SIGINT', function() {
 			console.log("Caught interrupt signal");
 			peripheral.disconnect(function(error){
-				console.log(peripheral.uuid + " Disconnected")
+				if (error) {
+					console.log(peripheral.uuid + " Disconnect error");
+					console.log(error);
+				} else {
+					console.log(peripheral.uuid + " Disconnected")
+				}
+				clearTimeout(SensorTag1350DisconnectHandler);
 			});
 			if(i_should_exit)
 					process.exit();

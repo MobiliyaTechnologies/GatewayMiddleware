@@ -21,6 +21,16 @@ var allowDuplicates = false;
 var jsonfile = require('jsonfile')
 var sensorListFile = 'sensorlist.json';
 var bus = require('./eventbus');
+var HandleQueueInterval;
+var List = require("collections/list");
+var PeripheralList = new List([],
+			// change uniqueness
+			function (a, b) {
+				return a.id === b.id;
+			},
+			function (object) {
+				return object.id;
+			});
 
 
 //Create an event handler:
@@ -91,6 +101,53 @@ function BLEApp (){
 		}else{
 			// check for particular case of the whitelist address
 			console.log(peripheral.id);
+			/*
+			var isExists = PeripheralList.has(peripheral.id, function (a, b) {
+				//console.log("has ", b);
+				return a === JSON.parse(b).id;
+			});*/
+			
+			var entry = PeripheralList.get({id:peripheral.id});
+			console.log("entry ", entry);
+			if (entry == null || entry == undefined) {
+				//Add to list
+				console.log("List PUSH ", peripheral.id)
+				PeripheralList.push(peripheral);
+				PeripheralList.forEach(function(element, indx){
+					//console.log(JSON.stringify(element));
+					console.log("List items: ", element.id);
+				}); 
+			} else {	
+				console.log("List PUSH")
+			}
+			
+		}
+	});
+	
+	// check for a message, removed beacuse already implemented in noble internally
+	/*
+	noble.on('warning',function(message){
+		console.log(message);
+	});
+	*/
+
+	// if a scan stop happens internally in a BLE stack for unknown reasons, start scanning again after a timeout
+	// NOTE: not to be used with state change listener
+	noble.on('scanStop', function(){
+		console.log("Scanning Stopped");
+		setTimeout(function(){
+			noble.startScanning();
+		},2000);
+	});
+
+};
+
+function HandleQueue() {
+	
+	var peripheral = PeripheralList.shift();
+	
+	if	(peripheral != undefined) {
+		console.log("List POP: ", peripheral.id);
 			var SensorId = peripheral.id.toLowerCase();
 			if (whitelistContentAll[SensorId].SensorType == "SensorTag2650"){
 				var ST_2650_DS = new SensorDataStructure();
@@ -123,26 +180,10 @@ function BLEApp (){
 			// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found
 			console.log('No compatible library for this sensor: ', peripheral.advertisement.localName,peripheral.id);
 			}	
-		}
-	});
-	
-	// check for a message, removed beacuse already implemented in noble internally
-	/*
-	noble.on('warning',function(message){
-		console.log(message);
-	});
-	*/
-
-	// if a scan stop happens internally in a BLE stack for unknown reasons, start scanning again after a timeout
-	// NOTE: not to be used with state change listener
-	noble.on('scanStop', function(){
-		console.log("Scanning Stopped");
-		setTimeout(function(){
-			noble.startScanning();
-		},2000);
-	});
-
-};
+	} else {
+	console.log("List POP");
+	}
+}
 
 //Switch off the Cloud Led as the cloud is yet to start
 CloudLed("0");
@@ -164,3 +205,5 @@ CloudInit.AzureInit(function (){
 	CloudLed("1");//Power on the cloud led as the cloud init is now successful
 	BLEApp();
 });
+
+HandleQueueInterval = setInterval(HandleQueue,4000);
