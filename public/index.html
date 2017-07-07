@@ -14,10 +14,12 @@
          Enter B2c Application Id: <input type = "text" ng-model = "config.b2cApplicationId"><br>
 		 Enter B2c Tenant Name: <input type = "text" ng-model = "config.tenantName"><br>
 		 Enter B2c Sign In Policy: <input type = "text" ng-model = "config.signInPolicyName"><br>
-		 <button ng-click = "submit('click')">Submit</button>
-		 
-		 
-         <br>
+		  
+		  <div style="margin:50px;">
+			  <button ng-click = "submit('click')" >Submit</button>
+		 	  <div ng-show="loader.loading"  >Signing in... Please wait.</div>
+		  </div>
+		 <br>
          
          
       </div>
@@ -94,6 +96,7 @@
                     bootbox.alert('Session expired... please login again', function () {
                         this.policyLogin(network, loginDisplayType.Page);
                     });
+		  				$scope.loader.loading = false;
                     return;
                 }
 				
@@ -106,6 +109,7 @@
                         return;
                     }
                     bootbox.alert('Signin error: ' + e.error.message);
+		 			$scope.loader.loading = false;
                 });
             },
             policyLogout: function (network, policy) {
@@ -124,6 +128,7 @@
                 if (typeof s.error !== 'undefined' && s.error !== null) {
                     if (s.error.code === 'blocked') {   //silentrenew(display: none) in case of expired token returns X-frame Options as DENY error
                         bootbox.alert("<p class='bg-danger'>there was an error in silent renewing the token. Please login again</p>");
+		 				$scope.loader.loading = false;
                         return;
                     }
                 }
@@ -136,6 +141,11 @@
         };
     });
          mainApp.controller('mainController', function($scope,aadService,$http){ 
+			 $scope.loader = { 
+
+              loading : false
+
+             };
 		 $scope.config={restServer:'',
 						'b2cApplicationId':'',
             'tenantName': "",
@@ -159,6 +169,8 @@
             return session && session.access_token && session.expires > currentTime;
         };
 		 $scope.submit=function(state){
+			 
+			  $scope.loader.loading = true;
 				localStorage.setItem("restServer", $scope.config.restServer);
                 localStorage.setItem("b2cApplicationId", $scope.config.b2cApplicationId);
                 localStorage.setItem("tenantName", $scope.config.tenantName);
@@ -222,8 +234,10 @@
                     }).then(function (response) {
                         console.log(response);
 						alert("Successfully stored connection string !");
+		 			   $scope.loader.loading = false;
                     })
                         .catch(function (error) {
+		 					 $scope.loader.loading = false;
                             
                         });
 		   }
