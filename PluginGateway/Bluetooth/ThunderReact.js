@@ -89,7 +89,9 @@ ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudA
 			
 			if (capIdAccelerometer > -1 || capIdGyroscope > -1) {		
 				var AccelerometerOrientationService = services[8]; //uuid: 0xa4e649f4-4be5-11e5-885d-feff819cdc9f
-
+				if (AccelerometerOrientationService == undefined) {
+					return;
+				}
 				AccelerometerOrientationService.discoverCharacteristics(null,function(error,characteristics) {
 					console.log('discovered the following characteristics in AccelerometerOrientationService:');
 					for ( var i in characteristics) {
@@ -134,6 +136,9 @@ ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudA
 			
 			if (capIdAmbientLight > -1) {	
 				var AmbientLightService = services[7];	//uuid: 0xd24c4f4e-17a7-4548-852c-abf51127368b
+				if (AmbientLightService == undefined) {
+					return;
+				}
 				AmbientLightService.discoverCharacteristics(null,function(error,characteristics) {
 					console.log('discovered the following characteristics in ambient light service:');
 					for ( var i in characteristics) {
@@ -148,9 +153,13 @@ ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudA
 					},4000);
 				});	
 			}
+			
 			//console.log(EnvironmentService);
 			if(capIdHumidity > -1 || capIdTemperature > -1 || capIdUVIndex > -1) {
 				var EnvironmentService = services[6]; //uuid: 0x181a
+				if (EnvironmentService == undefined) {
+					return;
+				}
 				EnvironmentService.discoverCharacteristics(null,function(error,characteristics) {
 					console.log('discovered the following characteristics in environment service:');
 					for ( var i in characteristics) {

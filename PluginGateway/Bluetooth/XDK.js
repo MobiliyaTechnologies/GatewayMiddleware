@@ -24,7 +24,9 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 		});
 		peripheral.once('servicesDiscover', function(services){//on service discovery
 			var AccelerometerService = services[2];
-		
+			if (AccelerometerService == undefined) {
+					return;
+			}
 			AccelerometerService.discoverCharacteristics(null,function(error,characteristics) {// characteristic discovery
 				console.log('discovered the following characteristics:');
 				for ( var i in characteristics) {
