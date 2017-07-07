@@ -8,6 +8,7 @@ var SensorTag1350 = require('./PluginGateway/Bluetooth/SensorTag1350');
 var ThunderboardReact = require('./PluginGateway/Bluetooth/ThunderReact');
 var ThunderboardSense = require('./PluginGateway/Bluetooth/ThunderSense');
 var XDK = require('./PluginGateway/Bluetooth/XDK');
+var Geolocation = require('./PluginGateway/Bluetooth/Geolocation');
 var CloudAdaptor = require('./PluginGateway/Cloud/AzureAdaptor');
 var SensorDataStructure = require('./PluginGateway/SensorDataStructure/Json');
 var CloudLed = require('./PluginGateway/Cloud/CloudLed');
@@ -175,9 +176,17 @@ CloudLed("0");
 // constructor for cloud init
 var CloudInit = new CloudAdaptor();
 
+
+//start grolocation plugin
+var Geolocation_DS = new SensorDataStructure();
+var Geolocation_CloudAdaptor = new CloudAdaptor();
+var Geolocation_Handle = new Geolocation();
+Geolocation_Handle.GeolocationHandler(Geolocation_CloudAdaptor.AzureHandle,Geolocation_DS.JSON_data);
+
 // call the particular cloud init process
 CloudInit.AzureInit(function (){
 	// start the local protocol app
 	CloudLed("1");//Power on the cloud led as the cloud init is now successful
 	BLEApp();
+
 });

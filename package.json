@@ -9,6 +9,7 @@
     "azure-iot-device-mqtt": "^1.1.14",
     "azure-iothub": "^1.1.11",
     "body-parser": "^1.17.2",
+    "collections": "^5.0.6",
     "electron": "^1.4.3",
     "electron-packager": "^8.1.0",
     "events": "^1.1.1",
