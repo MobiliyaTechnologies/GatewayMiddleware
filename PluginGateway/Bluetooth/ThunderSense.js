@@ -110,7 +110,9 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 			
 			if (capIdAccelerometer > -1 || capIdGyroscope > -1) {		
 				var AccelerometerOrientationService = services[9]; //uuid: 0xa4e649f4-4be5-11e5-885d-feff819cdc9f
-
+				if (AccelerometerOrientationService == undefined) {
+					return;
+				}
 				AccelerometerOrientationService.discoverCharacteristics(null,function(error,characteristics) {
 					console.log('discovered the following characteristics in AccelerometerOrientationService:');
 					for ( var i in characteristics) {
@@ -153,10 +155,12 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 				});
 			}
 			
-			
 			console.log(EnvironmentService);
 			if(capIdHumidity > -1 || capIdTemperature > -1 || capIdUVIndex > -1 || capIdAmbientLight > -1 || capIdBarometricPressure > -1 || capIdNoiseLevel > -1) {
 				var EnvironmentService = services[4]; //uuid: 0x181a
+				if (EnvironmentService == undefined) {
+					return;
+				}
 				EnvironmentService.discoverCharacteristics(null,function(error,characteristics) {
 					console.log('discovered the following characteristics in environment service:');
 					for ( var i in characteristics) {
