@@ -7,6 +7,7 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 			return;
 		}
 		process.on('SIGINT', function() {
+			var i_should_exit = true;
 			console.log("Caught interrupt signal");
 			peripheral.disconnect(function(error){
 				console.log(peripheral.uuid + " Disconnected")
