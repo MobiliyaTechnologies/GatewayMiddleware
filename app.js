@@ -9,8 +9,12 @@ var file = "connectionString.txt";
 var bodyParser = require('body-parser');
 var bus = require('./eventbus');
 
+require('./ws_server');
+require('./ws_client');
+
 //continue this file if connection string exists else go to login
-fs.readFile(file, 'utf-8', function (err,data) {
+var getConnectionString = function() {
+	fs.readFile(file, 'utf-8', function (err,data) {
 	  if (err) {
 		 console.log("Connection String Does Not Exists !!");
 		 bus.emit('log',"Connection String Does Not Exists !!");
@@ -24,9 +28,11 @@ fs.readFile(file, 'utf-8', function (err,data) {
 		bus.emit('log',"Connection String Exists !!");
 		require('./main');
 	  }
-});
+	});
+}
 
-require('./ws_server');
+setTimeout(getConnectionString, 2000);
+
 
 // Define the port to run on
 app.set('port', 65159);
