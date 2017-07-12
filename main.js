@@ -83,6 +83,7 @@ function BLEApp (){
 		if (index == -1){
 			// condition when the device found is not in whitelist
 			console.log('Found device with local name which is not a whitelist : '+ peripheral.id);
+			bus.emit('log','Found device with local name which is not a whitelist : '+ peripheral.id);
 			//create a array for the devices which are discovered now, but may have been whitelisted in runtime later
 			// NOTE : It may create large memory if so many decvices are discovered over time, should apply filter in the device name
 			if (CompatibleSensors.indexOf(peripheral.advertisement.localName) !== -1){

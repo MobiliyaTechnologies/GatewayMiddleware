@@ -4,6 +4,7 @@
       <title>Asset Monitoring Configuration</title>
       <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
 	  <script src = "hello.all.js"></script>
+	   <script src="ng-websocket.js"></script>
    </head>
    
    <body>
@@ -20,12 +21,20 @@
 		 	  <div ng-show="loader.loading"  >Signing in... Please wait.</div>
 		  </div>
 		 <br>
-         
+         <div>
+			 <textarea style="width:500px;height:500px;">{{data}}</textarea>		 
+	    <div>
          
       </div>
       
       <script>
-         var mainApp = angular.module("gatewayApp", []);
+         var mainApp = angular.module("gatewayApp", ['ngWebsocket']);
+		  
+		
+    mainApp.run(function ($websocket) {
+    
+    });
+		  
          mainApp.factory('aadService', function ($http) {
         var responseType = 'token id_token';
         var redirectURI = './redirect.html';
@@ -140,7 +149,7 @@
 
         };
     });
-         mainApp.controller('mainController', function($scope,aadService,$http){ 
+         mainApp.controller('mainController', function($scope,aadService,$http,$websocket){ 
 			 $scope.loader = { 
 
               loading : false
@@ -292,6 +301,27 @@
 			}
 			
 			$scope.getConfig();
+			 
+			 
+			 
+			     var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
+$scope.data='';
+        ws.$on('$open', function () {
+            console.log('Oh my gosh, websocket is really open!  awesome!');
+			
+			//ws.$emit('ping', 'hi listening websocket server'); // send a message to the websocket server
+        });
+		ws.$on('$message', function (data) {
+            //console.log('The websocket server has sent the following data:');
+            console.log(data);
+			$scope.data=$scope.data+data+'\n';
+			$scope.$apply();
+            //ws.$close();
+        });
+		
+        ws.$on('$close', function () {
+            console.log('Websocket Server Closed !');
+        });
          });
 		 
       </script>

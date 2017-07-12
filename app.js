@@ -8,9 +8,13 @@ var fs=require('fs');
 var file = "connectionString.txt";
 var bodyParser = require('body-parser');
 var bus = require('./eventbus');
+var open = require('opn');
 
 require('./ws_server');
-require('./ws_client');
+//require('./ws_client');
+console.log("Opening browser window..");
+bus.emit('log',"Opening browser window..");
+open('http://127.0.0.1:65159/');
 
 //continue this file if connection string exists else go to login
 var getConnectionString = function() {
@@ -22,7 +26,9 @@ var getConnectionString = function() {
 		 bus.emit('log',"Please Login !!");
 		 console.log("open url 'http://localhost:65159/' in browser");
 		 bus.emit('log',"open url 'http://localhost:65159/' in browser");
-		 console.log(err);
+	     console.log("open url 'http://localhost:65159/' in browser");
+		 
+		  console.log(err);
 	  } else {
 		console.log("Connection String Exists !!");
 		bus.emit('log',"Connection String Exists !!");
@@ -31,7 +37,7 @@ var getConnectionString = function() {
 	});
 }
 
-setTimeout(getConnectionString, 2000);
+setTimeout(getConnectionString, 7000);
 
 
 // Define the port to run on
