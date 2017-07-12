@@ -74,6 +74,7 @@ function BLEApp (){
 	//start scanning for ble services
 	noble.startScanning(null,allowDuplicates);
 	console.log("started scanning for ble sevices with following whitelisted address :",whitelistAddressAll);
+	bus.emit('log',"Started scanning for ble sevices with whitelisted address");
 	//callback when BLE scan discovers a new ble device, return a peripheral object
 	noble.on('discover',function(peripheral) { 
 		//console.log(peripheral)
@@ -91,6 +92,7 @@ function BLEApp (){
 		}else{
 			// check for particular case of the whitelist address
 			console.log(peripheral.id);
+			bus.emit('log',"Whitelisted device found: " + peripheral.id);
 			var SensorId = peripheral.id.toLowerCase();
 			if (whitelistContentAll[SensorId].SensorType == "SensorTag2650"){
 				var ST_2650_DS = new SensorDataStructure();
@@ -119,9 +121,10 @@ function BLEApp (){
 				var ThunderboardSense_Handle = new ThunderboardSense();
 				ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,ThunderboardSense_CloudAdaptor.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId]);
 			}else{
-			//console.log(peripheral);
-			// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found
-			console.log('No compatible library for this sensor: ', peripheral.advertisement.localName,peripheral.id);
+				//console.log(peripheral);
+				// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found
+				console.log('No compatible library for this sensor: ', peripheral.advertisement.localName,peripheral.id);
+				bus.emit('log','No compatible library for this sensor: ' + peripheral.id);
 			}	
 		}
 	});
@@ -137,6 +140,7 @@ function BLEApp (){
 	// NOTE: not to be used with state change listener
 	noble.on('scanStop', function(){
 		console.log("Scanning Stopped");
+		bus.emit('log',"Scanning Stopped");
 		setTimeout(function(){
 			noble.startScanning();
 		},2000);
