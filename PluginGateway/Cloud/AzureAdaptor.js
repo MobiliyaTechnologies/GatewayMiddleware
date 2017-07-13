@@ -35,6 +35,7 @@ AzureAdaptor.prototype.AzureHandle= function (json_data) {
 
 AzureAdaptor.prototype.AzureInit = function (cb) {
 	console.log("AzureAdaptor.prototype.AzureInit");
+	bus.emit('log','Initiating Azure Adapter');
 	fs.readFile('././connectionString.txt', 'utf8', function (err,data) {
 	  if (err) {
 		console.log(err);
@@ -48,45 +49,49 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 		client = Client.fromConnectionString(connectionString, Protocol);
 
 			client.open(function (err) {
-		  if (err) {
-			console.error('Could not connect: ' + err.message);
-		  } else {
-			console.log('Azure Iot Sdk Connected');
-			cb();
-			client.on('message', function (msg) {
-				console.log("CloudToDevice Message Received");
-				console.log('Message Received ! Id: ' + msg.messageId + ' Body: ' + msg.data + ' PropertyList:  ', msg.properties.propertyList[0]);
-				if (msg.properties.propertyList[0] != undefined) {
-					if (isJSON((msg.data).toString())) {
-						console.log("JSON");
-						//console.log((msg.data).toString());
-						
-						if(msg.properties.propertyList[0].hasOwnProperty('key')) {
-							var status = msg.properties.propertyList[0].value;
-							//console.log('status : ', status);
-							saveData((msg.data).toString(), status);
+			  if (err) {
+				  console.error('Could not connect: ' + err.message);
+				  bus.emit('emit','Could not connect to Azure: ' + err.message);
+			  } else {
+				console.log('Azure Iot Sdk Connected');
+				  bus.emit('emit','Azure Iot Sdk Connected');
+				cb();
+				client.on('message', function (msg) {
+					console.log("CloudToDevice Message Received");
+					console.log('Message Received ! Id: ' + msg.messageId + ' Body: ' + msg.data + ' PropertyList:  ', msg.properties.propertyList[0]);
+					if (msg.properties.propertyList[0] != undefined) {
+						if (isJSON((msg.data).toString())) {
+							console.log("JSON");
+							//console.log((msg.data).toString());
+
+							if(msg.properties.propertyList[0].hasOwnProperty('key')) {
+								var status = msg.properties.propertyList[0].value;
+								//console.log('status : ', status);
+								saveData((msg.data).toString(), status);
+							}
 						}
 					}
-				}
-			  // When using MQTT the following line is a no-op.
-			  client.complete(msg, printResultFor('completed'));
-			  // The AMQP and HTTP transports also have the notion of completing, rejecting or abandoning the message.
-			  // When completing a message, the service that sent the C2D message is notified that the message has been processed.
-			  // When rejecting a message, the service that sent the C2D message is notified that the message won't be processed by the device. the method to use is client.reject(msg, callback).
-			  // When abandoning the message, IoT Hub will immediately try to resend it. The method to use is client.abandon(msg, callback).
-			  // MQTT is simpler: it accepts the message by default, and doesn't support rejecting or abandoning a message.
-			});
-			// Create a message and send it to the IoT Hub every second
-			client.on('error', function (err) {
-			  console.error(err.message);
-			});
+				  // When using MQTT the following line is a no-op.
+				  client.complete(msg, printResultFor('completed'));
+				  // The AMQP and HTTP transports also have the notion of completing, rejecting or abandoning the message.
+				  // When completing a message, the service that sent the C2D message is notified that the message has been processed.
+				  // When rejecting a message, the service that sent the C2D message is notified that the message won't be processed by the device. the method to use is client.reject(msg, callback).
+				  // When abandoning the message, IoT Hub will immediately try to resend it. The method to use is client.abandon(msg, callback).
+				  // MQTT is simpler: it accepts the message by default, and doesn't support rejecting or abandoning a message.
+				});
+				// Create a message and send it to the IoT Hub every second
+				client.on('error', function (err) {
+				  console.error(err.message);
+				});
 
-			client.on('disconnect', function () {
-			  //clearInterval(sendInterval);
-			  client.removeAllListeners();
-			  client.open(connectCallback);
-			});
-		  }
+				client.on('disconnect', function () {
+				  //clearInterval(sendInterval);
+					console.log("Azure client disconnected");
+					bus.emit('log',"Azure client disconnected");
+				  client.removeAllListeners();
+				  //client.open(connectCallback);
+				});
+			  }
 		});
 	});
 };

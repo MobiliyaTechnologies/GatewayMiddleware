@@ -9,6 +9,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 		}
 		console.log('connected to peripheral (SensorTag2650): '	+ peripheral.uuid);
 		process.on('SIGINT', function() {
+			var i_should_exit = true;
 			console.log("Caught interrupt signal");
 			peripheral.disconnect(function(error){
 				console.log(peripheral.uuid + " Disconnected")
