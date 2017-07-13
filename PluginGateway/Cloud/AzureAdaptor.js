@@ -89,7 +89,7 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 					console.log("Azure client disconnected");
 					bus.emit('log',"Azure client disconnected");
 				  client.removeAllListeners();
-				  client.open(connectCallback);
+				  //client.open(connectCallback);
 				});
 			  }
 		});
