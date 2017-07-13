@@ -22,7 +22,7 @@
 		  </div>
 		 <br>
          <div>
-			 <textarea style="width:500px;height:500px;">{{data}}</textarea>		 
+			 <textarea id="logDiv" style="width:600px;height:350px;">{{data}}</textarea>		 
 	    <div>
          
       </div>
@@ -316,6 +316,8 @@ $scope.data='';
             console.log(data);
 			$scope.data=$scope.data+data+'\n';
 			$scope.$apply();
+			var elmnt = document.getElementById("logDiv");
+		    elmnt.scrollTop = elmnt.scrollHeight;
             //ws.$close();
         });
 		

@@ -24,12 +24,12 @@ wss.on('connection', function connection(ws) {
 
 console.log('Creating Event Bus Client');
 var logMessage = function (message) {
-console.log('Log Message: ', message);
+//console.log('Log Message: ', message);
 	if(wss != undefined) {
 		// Broadcast to everyone else.
     wss.clients.forEach(function each(client) {
       if (client !== wss && client.readyState === WebSocket.OPEN) {
-        console.log('SEND Message: ', message);
+        //console.log('SEND Message: ', message);
         client.send(message);
       }
     });
