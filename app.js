@@ -9,12 +9,13 @@ var file = "connectionString.txt";
 var bodyParser = require('body-parser');
 var bus = require('./eventbus');
 var open = require('opn');
+var cors = require('cors');
 
 require('./ws_server');
 //require('./ws_client');
 console.log("Opening browser window..");
 bus.emit('log',"Opening browser window..");
-open('http://127.0.0.1:65159/');
+open('http://localhost:65159/');
 
 //continue this file if connection string exists else go to login
 var getConnectionString = function() {
@@ -42,6 +43,7 @@ setTimeout(getConnectionString, 7000);
 
 // Define the port to run on
 app.set('port', 65159);
+app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
