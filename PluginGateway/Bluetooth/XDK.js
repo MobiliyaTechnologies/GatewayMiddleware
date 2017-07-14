@@ -7,6 +7,7 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 			return;
 		}
 		process.on('SIGINT', function() {
+			var i_should_exit = true;
 			console.log("Caught interrupt signal");
 			peripheral.disconnect(function(error){
 				console.log(peripheral.uuid + " Disconnected")
@@ -24,7 +25,9 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 		});
 		peripheral.once('servicesDiscover', function(services){//on service discovery
 			var AccelerometerService = services[2];
-		
+			if (AccelerometerService == undefined) {
+					return;
+			}
 			AccelerometerService.discoverCharacteristics(null,function(error,characteristics) {// characteristic discovery
 				console.log('discovered the following characteristics:');
 				for ( var i in characteristics) {

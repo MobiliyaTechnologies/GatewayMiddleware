@@ -2,7 +2,7 @@
   "name": "gateway-middleware",
   "version": "1.0.0",
   "description": "The pluggable gateway app to connect to various low range protocol sensors to internet",
-  "main": "main.js",
+  "main": "app.js",
   "dependencies": {
     "azure-event-hubs": "0.0.8",
     "azure-iot-device": "^1.1.14",
@@ -18,7 +18,9 @@
     "jsonfile": "^3.0.0",
     "kafka-node": "^1.5.0",
     "moment-timezone": "^0.5.11",
-    "noble": "^1.8.0"
+    "noble": "^1.8.0",
+    "ws": "^3.0.0",
+    "opn": "^5.1.0"
   },
   "scripts": {
     "test": "sudo node main.js"
@@ -33,5 +35,9 @@
     "iot"
   ],
   "author": "tarun.navadia@mobiliya.com",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^1.6.11",
+    "electron-rebuild": "^1.5.11"
+  }
 }

@@ -9,6 +9,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 		}
 		console.log('connected to peripheral (SensorTag2650): '	+ peripheral.uuid);
 		process.on('SIGINT', function() {
+			var i_should_exit = true;
 			console.log("Caught interrupt signal");
 			peripheral.disconnect(function(error){
 				console.log(peripheral.uuid + " Disconnected")
@@ -58,7 +59,9 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			// Temperature
 			if (capIdAmbientTemperature > -1 || capIdObjectTemperature > -1) {			
 				var TemperatureService = services[3]; // uuid: f000aa0004514000b000000000000000
-
+				if (TemperatureService == undefined) {
+					return;
+				}
 				TemperatureService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
 					console.log('Temperature discovered the following characteristics:');
 					for ( var i in characteristics) {
@@ -102,7 +105,9 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			// Humidity
 			if (capIdHumidity > -1) {			
 				var HumidityService = services[4]; // uuid: f000aa2004514000b000000000000000
-
+				if (HumidityService == undefined) {
+					return;
+				}
 				HumidityService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
 					console.log('Humidity discovered the following characteristics:');
 					for ( var i in characteristics) {
@@ -139,7 +144,9 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			// Barometric Pressure
 			if (capIdBarometricPressure > -1) {			
 				var BarometricPressureService = services[5]; // uuid: f000aa4004514000b000000000000000
-
+				if (BarometricPressureService == undefined) {
+					return;
+				}
 				BarometricPressureService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
 					console.log('BarometricPressure discovered the following characteristics:');
 					for ( var i in characteristics) {
@@ -176,7 +183,9 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			// MPU9250 (Accelerometer, Magnetometer, Gyroscope)
 			if (capIdAccelerometer > -1 || capIdMagnetometer > -1 || capIdGyroscope > -1) {
 				var MPU9250Service = services[6]; // uuid: f000aa8004514000b000000000000000
-
+				if (MPU9250Service == undefined) {
+					return;
+				}
 				MPU9250Service.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
 					console.log('MPU9250 discovered the following characteristics:');
 					for ( var i in characteristics) {
@@ -233,7 +242,9 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			// Luxometer
 			if (capIdLuxometer > -1) {			
 				var LuxometerService = services[7]; // uuid: f000aa7004514000b000000000000000
-
+				if (LuxometerService == undefined) {
+					return;
+				}
 				LuxometerService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
 					console.log('Luxometer discovered the following characteristics:');
 					for ( var i in characteristics) {
