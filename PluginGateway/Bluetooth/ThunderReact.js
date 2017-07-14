@@ -51,12 +51,13 @@ function readAmbientLight(CloudAdaptor,DataWrapper,AmbientLight,SensorDetails,ca
 ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities){
 	
 	var AmbientTempUnit = "Celsius";
-	
-	Capabilities.forEach(function(elem, index) {
-		if (elem.Name == "AmbientTemperature") {
-			AmbientTempUnit = elem.Unit;
-		}	
-	});
+	if (Capabilities != undefined) {
+		Capabilities.forEach(function(elem, index) {
+			if (elem.Name == "AmbientTemperature") {
+				AmbientTempUnit = elem.Unit;
+			}	
+		});
+	}
 	
 	peripheral.connect(function(error) {
 		if(error) {

@@ -5,14 +5,15 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 	var AmbientTempUnit = "Celsius";
 	var ObjectTempUnit = "Celsius";
 	
-	Capabilities.forEach(function(elem, index) {
-		if (elem.Name == "AmbientTemperature") {
-			AmbientTempUnit = elem.Unit;
-		} else if (elem.Name == "ObjectTemperature") {
-			ObjectTempUnit = elem.Unit;
-		}	
-	});
-	
+	if (Capabilities != undefined) {
+		Capabilities.forEach(function(elem, index) {
+			if (elem.Name == "AmbientTemperature") {
+				AmbientTempUnit = elem.Unit;
+			} else if (elem.Name == "ObjectTemperature") {
+				ObjectTempUnit = elem.Unit;
+			}	
+		});
+	}
 	peripheral.connect(function(error) {
 		if(error) {
 			console.log("Error in connection with peripheral (SensorTag2650): " + peripheral);

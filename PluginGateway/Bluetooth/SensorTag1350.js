@@ -14,13 +14,15 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 	var AmbientTempUnit = "Celsius";
 	var ObjectTempUnit = "Celsius";
 	
-	Capabilities.forEach(function(elem, index) {
-		if (elem.Name == "AmbientTemperature") {
-			AmbientTempUnit = elem.Unit;
-		} else if (elem.Name == "ObjectTemperature") {
-			ObjectTempUnit = elem.Unit;
-		}	
-	});
+	if (Capabilities != undefined) {
+		Capabilities.forEach(function(elem, index) {
+			if (elem.Name == "AmbientTemperature") {
+				AmbientTempUnit = elem.Unit;
+			} else if (elem.Name == "ObjectTemperature") {
+				ObjectTempUnit = elem.Unit;
+			}	
+		});
+	}
 	console.log("Temperature Unit (Ambient, Object): ", AmbientTempUnit, ObjectTempUnit);
 	
 	peripheral.connect(function(error) { //connect

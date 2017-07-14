@@ -65,12 +65,13 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 	
 	var AmbientTempUnit = "Celsius";
 	
-	Capabilities.forEach(function(elem, index) {
-		if (elem.Name == "AmbientTemperature") {
-			AmbientTempUnit = elem.Unit;
-		}	
-	});
-	
+	if (Capabilities != undefined) {
+		Capabilities.forEach(function(elem, index) {
+			if (elem.Name == "AmbientTemperature") {
+				AmbientTempUnit = elem.Unit;
+			}	
+		});
+	}
 	peripheral.connect(function(error) {
 		if(error) {
 			console.log("Error in connection with peripheral (ThunderBoard-Sense): " + peripheral);
@@ -175,7 +176,7 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 					}
 				}
 			
-				console.log(EnvironmentService);
+				console.log("EnvironmentService");
 				if(services[i].uuid == "181a") {
 					if(capIdHumidity > -1 || capIdTemperature > -1 || capIdUVIndex > -1 || capIdAmbientLight > -1 || capIdBarometricPressure > -1 || capIdNoiseLevel > -1) {
 						//var EnvironmentService = services[4]; //uuid: 0x181a

@@ -246,6 +246,25 @@
                             
                         });
 		   }
+		   $scope.saveCapabilityUnits=function(capabilities){
+		   
+					$http({
+                        url: 'http://localhost:65159/capabilities',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'capabilities':JSON.stringify(capabilities)},
+                        headers: {
+                            "Content-Type": "application/json",
+                          
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+						alert("Successfully stored capabilities !");
+                    })
+                        .catch(function (error) {
+                            
+                        });
+		   }
 			$scope.getMacAddr=function(){
 			
 			  $http({
