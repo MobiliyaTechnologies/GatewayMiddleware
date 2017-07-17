@@ -23,14 +23,7 @@ var sensorListFile = 'sensorlist.json';
 var bus = require('./eventbus');
 var HandleQueueInterval;
 var List = require("collections/list");
-var PeripheralList = new List([],
-			// change uniqueness
-			function (a, b) {
-				return a.id === b.id;
-			},
-			function (object) {
-				return object.id;
-			});
+var PeripheralList = new List([]);
 
 
 //Create an event handler:
@@ -108,10 +101,16 @@ function BLEApp (){
 				//console.log("has ", b);
 				return a === JSON.parse(b).id;
 			});*/
-			
-			var entry = PeripheralList.get({id:peripheral.id});
-			console.log("entry ", entry);
-			if (entry == null || entry == undefined) {
+			var found = false;
+			PeripheralList.forEach(function(element, indx){
+					//console.log(JSON.stringify(element));
+					//console.log("List items: ", element.id);
+					if(element.id == peripheral.id) {
+						found = true;
+						return;
+					}
+			}); 
+			if (!found) {
 				//Add to list
 				console.log("List PUSH ", peripheral.id)
 				PeripheralList.push(peripheral);
