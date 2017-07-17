@@ -217,8 +217,8 @@
                         }
                     }).then(function (response) {
                         console.log("Connection String ::",response);
+						$scope.saveCapabilityUnits(response.data.Capabilities);
 						$scope.saveConnectionStr(response.data.DeviceConnectionString);
-
                     })
                         .catch(function (error) {
                             console.log("Connection String Error ::",error);
@@ -249,6 +249,44 @@
                     })
                         .catch(function (error) {
 		 					 $scope.loader.loading = false;
+                            
+                        });
+		   }
+		   $scope.saveCapabilityUnits=function(capabilities){
+		   
+					$http({
+                        url: 'http://localhost:65159/capabilities',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'capabilities':JSON.stringify(capabilities)},
+                        headers: {
+                            "Content-Type": "application/json",
+                          
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+						alert("Successfully stored capabilities !");
+                    })
+                        .catch(function (error) {
+                            
+                        });
+		   }
+		   $scope.saveCapabilityUnits=function(capabilities){
+		   
+					$http({
+                        url: 'http://localhost:65159/capabilities',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'capabilities':JSON.stringify(capabilities)},
+                        headers: {
+                            "Content-Type": "application/json",
+                          
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+						alert("Successfully stored capabilities !");
+                    })
+                        .catch(function (error) {
                             
                         });
 		   }

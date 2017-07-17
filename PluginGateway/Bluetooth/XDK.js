@@ -1,16 +1,23 @@
+var bus = require('../../eventbus');
 function XDK () { };//class for XDK
-XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails){// XDK handle
+XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,Capabilities){// XDK handle
 	peripheral.connect(function(error) {
 		if(error) {
 			console.log("Error in connection with peripheral (Bosch-XDK): " + peripheral);
 			console.log(error);
 			return;
 		}
+		bus.emit('sensor_group_connected',SensorDetails.GroupId);
 		process.on('SIGINT', function() {
 			var i_should_exit = true;
 			console.log("Caught interrupt signal");
 			peripheral.disconnect(function(error){
-				console.log(peripheral.uuid + " Disconnected")
+				if(error) {
+					console.log(peripheral.uuid + " Disconnect error", error);
+				} else {
+					console.log(peripheral.uuid + " Disconnected");
+					bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
+				}
 			});
 			if(i_should_exit)
 					process.exit();
@@ -58,7 +65,7 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 					// the value can be scaled as per the requirement by editing the above line 
 					//var json_XYZ = {x:data.split(' ')[0],y:data.split(' ')[1],z:zValue}// formatting raw data 
 					console.log("XDK Accelerometer Data-- data event> ",	data.toString('utf-8'));
-					CloudAdaptor(DataWrapper(peripheral.id,"Bosch-XDK","Accelerometer",json_data));// pushing the data to cloud
+					CloudAdaptor(DataWrapper(json_data));// pushing the data to cloud
 					//console.log(json_data);
 				});
 				//Writing data to the characteristic to start accelerometer sampling
