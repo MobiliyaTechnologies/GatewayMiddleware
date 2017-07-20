@@ -9,14 +9,17 @@
    
    <body>
       <h2>Asset Monitoring Configuration</h2>
-      
+	
+	   
       <div ng-app = "gatewayApp" ng-controller = "mainController">
+		  
+		     <h4>Gateway: {{gatewayMac}}</h4>
          Enter Rest Server Url: <input type = "text" ng-model = "config.restServer"><br><br>
          Enter B2c Application Id: <input type = "text" ng-model = "config.b2cApplicationId"><br>
 		 Enter B2c Tenant Name: <input type = "text" ng-model = "config.tenantName"><br>
 		 Enter B2c Sign In Policy: <input type = "text" ng-model = "config.signInPolicyName"><br>
 		  
-		  <div style="margin:50px;">
+		  <div style="margin:20px;">
 			  <button ng-click = "submit('click')" >Submit</button>
 		 	  <div ng-show="loader.loading"  >Signing in... Please wait.</div>
 		  </div>
@@ -150,11 +153,14 @@
         };
     });
          mainApp.controller('mainController', function($scope,aadService,$http,$websocket){ 
+			 $scope.gatewayMac="Loading.."
 			 $scope.loader = { 
 
               loading : false
 
              };
+			 
+			 document.getElementById("logDiv").readOnly = true;
 		 $scope.config={restServer:'',
 						'b2cApplicationId':'',
             'tenantName': "",
@@ -192,11 +198,7 @@
                 script.setAttribute('src', './aadb2c.js');
                 document.head.appendChild(script);
 				$scope.aadLogin(state);
-				
-            
-				
-                
-		   
+			
 		   }
 		   $scope.getConnectionStr=function(mac){
 				//mac='"f4:8e:38:d0:80:c8"';
@@ -215,8 +217,8 @@
                         }
                     }).then(function (response) {
                         console.log("Connection String ::",response);
+						$scope.saveCapabilityUnits(response.data.Capabilities);
 						$scope.saveConnectionStr(response.data.DeviceConnectionString);
-
                     })
                         .catch(function (error) {
                             console.log("Connection String Error ::",error);
@@ -250,6 +252,44 @@
                             
                         });
 		   }
+		   $scope.saveCapabilityUnits=function(capabilities){
+		   
+					$http({
+                        url: 'http://localhost:65159/capabilities',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'capabilities':JSON.stringify(capabilities)},
+                        headers: {
+                            "Content-Type": "application/json",
+                          
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+						alert("Successfully stored capabilities !");
+                    })
+                        .catch(function (error) {
+                            
+                        });
+		   }
+		   $scope.saveCapabilityUnits=function(capabilities){
+		   
+					$http({
+                        url: 'http://localhost:65159/capabilities',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'capabilities':JSON.stringify(capabilities)},
+                        headers: {
+                            "Content-Type": "application/json",
+                          
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+						alert("Successfully stored capabilities !");
+                    })
+                        .catch(function (error) {
+                            
+                        });
+		   }
 			$scope.getMacAddr=function(){
 			
 			  $http({
@@ -271,9 +311,29 @@
                         .catch(function (error) {
                             
                         });
+
+			}
 			
-				
-			
+			$scope.showMacAddr=function(){
+				//console.log("$scope.gatewayMac", $scope.gatewayMac);
+			  $http({
+                        url: 'http://localhost:65159/macaddress',
+                        dataType: 'json',
+                        method: 'GET',
+                        headers: {
+                            "Content-Type": "application/json",
+                          
+                        }
+                    }).then(function (response) {
+				  		console.log("$scope.gatewayMac response: ", response.data);
+						$scope.gatewayMac = response.data;
+				  console.log("$scope.gatewayMac response: ", $scope.gatewayMac);
+				  		//$scope.$apply();
+                    })
+                        .catch(function (error) {
+                            console.log("$scope.gatewayMac error: ", error);
+                        });
+
 			}
 			$scope.aadLogin=function(state){
 			aadService.signIn($scope.config,function (b2cSession) {
@@ -301,6 +361,7 @@
 			}
 			
 			$scope.getConfig();
+			$scope.showMacAddr();
 			 
 			 
 			 

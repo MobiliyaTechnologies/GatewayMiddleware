@@ -10,6 +10,7 @@
     "azure-iothub": "^1.1.11",
     "body-parser": "^1.17.2",
     "collections": "^5.0.6",
+    "cors": "^2.8.4",
     "electron": "^1.4.3",
     "electron-packager": "^8.1.0",
     "events": "^1.1.1",
@@ -19,8 +20,8 @@
     "kafka-node": "^1.5.0",
     "moment-timezone": "^0.5.11",
     "noble": "^1.8.0",
-    "ws": "^3.0.0",
-    "opn": "^5.1.0"
+    "opn": "^5.1.0",
+    "ws": "^3.0.0"
   },
   "scripts": {
     "test": "sudo node main.js"
@@ -35,9 +36,5 @@
     "iot"
   ],
   "author": "tarun.navadia@mobiliya.com",
-  "license": "ISC",
-  "devDependencies": {
-    "electron": "^1.6.11",
-    "electron-rebuild": "^1.5.11"
-  }
+  "license": "ISC"
 }

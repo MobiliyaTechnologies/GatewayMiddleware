@@ -8,6 +8,7 @@ var SensorTag1350 = require('./PluginGateway/Bluetooth/SensorTag1350');
 var ThunderboardReact = require('./PluginGateway/Bluetooth/ThunderReact');
 var ThunderboardSense = require('./PluginGateway/Bluetooth/ThunderSense');
 var XDK = require('./PluginGateway/Bluetooth/XDK');
+var Geolocation = require('./PluginGateway/Bluetooth/Geolocation');
 var CloudAdaptor = require('./PluginGateway/Cloud/AzureAdaptor');
 var SensorDataStructure = require('./PluginGateway/SensorDataStructure/Json');
 var CloudLed = require('./PluginGateway/Cloud/CloudLed');
@@ -24,7 +25,10 @@ var bus = require('./eventbus');
 var HandleQueueInterval;
 var List = require("collections/list");
 var PeripheralList = new List([]);
-
+var capabilitiesFile = 'capabilities.json';
+var Capabilities;
+var SimultaneousBLEConnections = config.SimultaneousBLEConnections;
+var BLEConnectionDuration = config.BLEConnectionDuration;
 
 //Create an event handler:
 var myUpdateEventHandler = function () {
@@ -46,7 +50,22 @@ function updateSensorList() {
 	});
 }
 
+function getSensorUnit() {
+	console.log('getSensorUnit');	
+	jsonfile.readFile(capabilitiesFile, function(err, obj) {
+		if (err) {
+		 console.log("Unabel to read capabilitiesFile !!");
+		 console.log(err);
+		} else {
+			console.log("getSensorUnit capabilities");
+			Capabilities = obj;	
+			console.log(JSON.stringify(Capabilities));
+		}
+	});
+}
+
 updateSensorList();
+getSensorUnit();
 
 //Assign the event handler to an event:
 bus.on('updatelist', myUpdateEventHandler);
@@ -145,46 +164,47 @@ function BLEApp (){
 
 function HandleQueue() {
 	
-	var peripheral = PeripheralList.shift();
-	
-	if	(peripheral != undefined) {
-		console.log("List POP: ", peripheral.id);
-			bus.emit('log',"Whitelisted device found: " + peripheral.id);
-			var SensorId = peripheral.id.toLowerCase();
-			if (whitelistContentAll[SensorId].SensorType == "SensorTag2650"){
-				var ST_2650_DS = new SensorDataStructure();
-				var ST_2650_CloudAdaptor = new CloudAdaptor();
-				var ST_2650_Handle = new SensorTag2650();
-				ST_2650_Handle.SensorTagHandle2650(peripheral,ST_2650_CloudAdaptor.AzureHandle,ST_2650_DS.JSON_data,whitelistContentAll[SensorId]);
-			}else if (whitelistContentAll[SensorId].SensorType == "SensorTag1350"){
-				var ST1350_DS = new SensorDataStructure();
-				var ST1350_CloudAdaptor = new CloudAdaptor();
-				var ST1350_Handle = new SensorTag1350();
-				ST1350_Handle.SensorTagHandle1350(peripheral,ST1350_CloudAdaptor.AzureHandle,ST1350_DS.JSON_data,whitelistContentAll[SensorId]);
-			}else if (whitelistContentAll[SensorId].SensorType == "Bosch-XDK"){
-				var XDK_DS = new SensorDataStructure();
-				var XDK_CloudAdaptor = new CloudAdaptor();
-				var XDK_Handle = new XDK();
-				XDK_Handle.XDKHandle(peripheral,XDK_CloudAdaptor.AzureHandle,XDK_DS.JSON_data,whitelistContentAll[SensorId]);
-			}else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-React"){
-			//if (peripheral.id == "000b571c53ae"){ // for testing the sensor locally without whitelisting
-				var ThunderboardReact_DS = new SensorDataStructure();
-				var ThunderboardReact_CloudAdaptor = new CloudAdaptor();
-				var ThunderboardReact_Handle = new ThunderboardReact();
-				ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,ThunderboardReact_CloudAdaptor.AzureHandle,ThunderboardReact_DS.JSON_data,whitelistContentAll[SensorId]);
-			}else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-Sense"){
-				var ThunderboardSense_DS = new SensorDataStructure();
-				var ThunderboardSense_CloudAdaptor = new CloudAdaptor();
-				var ThunderboardSense_Handle = new ThunderboardSense();
-				ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,ThunderboardSense_CloudAdaptor.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId]);
-			}else{
-				//console.log(peripheral);
-				// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found
-				console.log('No compatible library for this sensor: ', peripheral.advertisement.localName,peripheral.id);
-				bus.emit('log','No compatible library for this sensor: ' + peripheral.id);
-			}	
-	} else {
-	console.log("List POP");
+	for(var i=0; i<SimultaneousBLEConnections; i++) {
+		var peripheral = PeripheralList.shift();
+		if	(peripheral != undefined) {
+			console.log("List POP: ", peripheral.id);
+				bus.emit('log',"Whitelisted device found: " + peripheral.id);
+				var SensorId = peripheral.id.toLowerCase();
+				if (whitelistContentAll[SensorId].SensorType == "SensorTag2650"){
+					var ST_2650_DS = new SensorDataStructure();
+					//var ST_2650_CloudAdaptor = new CloudAdaptor();
+					var ST_2650_Handle = new SensorTag2650();
+					ST_2650_Handle.SensorTagHandle2650(peripheral,CloudAdapterInstance.AzureHandle,ST_2650_DS.JSON_data,whitelistContentAll[SensorId],Capabilities,BLEConnectionDuration);
+				}else if (whitelistContentAll[SensorId].SensorType == "SensorTag1350"){
+					var ST1350_DS = new SensorDataStructure();
+					//var ST1350_CloudAdaptor = new CloudAdaptor();
+					var ST1350_Handle = new SensorTag1350();
+					ST1350_Handle.SensorTagHandle1350(peripheral,CloudAdapterInstance.AzureHandle,ST1350_DS.JSON_data,whitelistContentAll[SensorId],Capabilities,BLEConnectionDuration);
+				}else if (whitelistContentAll[SensorId].SensorType == "Bosch-XDK"){
+					var XDK_DS = new SensorDataStructure();
+					//var XDK_CloudAdaptor = new CloudAdaptor();
+					var XDK_Handle = new XDK();
+					XDK_Handle.XDKHandle(peripheral,CloudAdapterInstance.AzureHandle,XDK_DS.JSON_data,whitelistContentAll[SensorId],Capabilities,BLEConnectionDuration);
+				}else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-React"){
+				//if (peripheral.id == "000b571c53ae"){ // for testing the sensor locally without whitelisting
+					var ThunderboardReact_DS = new SensorDataStructure();
+					//var ThunderboardReact_CloudAdaptor = new CloudAdaptor();
+					var ThunderboardReact_Handle = new ThunderboardReact();
+					ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardReact_DS.JSON_data,whitelistContentAll[SensorId],Capabilities,BLEConnectionDuration);
+				}else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-Sense"){
+					var ThunderboardSense_DS = new SensorDataStructure();
+					//var ThunderboardSense_CloudAdaptor = new CloudAdaptor();
+					var ThunderboardSense_Handle = new ThunderboardSense();
+					ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId],Capabilities,BLEConnectionDuration);
+				}else{
+					//console.log(peripheral);
+					// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found
+					console.log('No compatible library for this sensor: ', peripheral.advertisement.localName,peripheral.id);
+					bus.emit('log','No compatible library for this sensor: ' + peripheral.id);
+				}	
+		} else {
+		console.log("List POP");
+		}
 	}
 }
 
@@ -200,14 +220,23 @@ CloudLed("0");
 //require('./c2d_message_receiver');
 // call the get whitelist regularly
 //setInterval(function(){GetWhiteList(cb)},30000);
+
 // constructor for cloud init
-var CloudInit = new CloudAdaptor();
+var CloudAdapterInstance = new CloudAdaptor();
+
+
+//start grolocation plugin
+var Geolocation_DS = new SensorDataStructure();
+var Geolocation_CloudAdaptor = new CloudAdaptor();
+var Geolocation_Handle = new Geolocation();
+Geolocation_Handle.GeolocationHandler(Geolocation_CloudAdaptor.AzureHandle,Geolocation_DS.JSON_data,BLEConnectionDuration);
 
 // call the particular cloud init process
-CloudInit.AzureInit(function (){
+CloudAdapterInstance.AzureInit(function (){
 	// start the local protocol app
 	CloudLed("1");//Power on the cloud led as the cloud init is now successful
 	BLEApp();
+
 });
 
-HandleQueueInterval = setInterval(HandleQueue,4000);
+HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
