@@ -60,6 +60,9 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 			AccelerometerService.once('characteristicsDiscover', function(characteristics){// on characteristic discover
 				var startSamplingAccelerometerData = characteristics[0];
 				var notifyServiceAccelerometerData = characteristics[1];
+				if (notifyServiceAccelerometerData == undefined || startSamplingAccelerometerData == undefined) {
+						return;
+				}
 				notifyServiceAccelerometerData.on('data', function(data,isNotification) {// notification events form acclerometer service
 					var data = data.toString('utf-8');
 					// The substituted value will be contained in the result variable

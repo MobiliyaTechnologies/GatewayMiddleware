@@ -110,7 +110,9 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 						//console.log("Temperature characteristicsDiscover " + characteristics);
 						var startSamplingTemperatureData = characteristics[1];
 						var notifyServiceTemperatureData = characteristics[0];
-
+						if (notifyServiceTemperatureData == undefined || startSamplingTemperatureData == undefined) {
+							return;
+						}
 					notifyServiceTemperatureData.on('data', function(data,isNotification) { // notification events form temperature service
 
 						convertIrTemperatureData(data, AmbientTempUnit, ObjectTempUnit, function(objectTemperature, ambientTemperature) {
@@ -156,7 +158,9 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 						//console.log("Humidity characteristicsDiscover " + characteristics);
 						var startSamplingHumidityData = characteristics[1];
 						var notifyServiceHumidityData = characteristics[0];
-
+						if (notifyServiceHumidityData == undefined || startSamplingHumidityData == undefined) {
+							return;
+						}
 						notifyServiceHumidityData.on('data', function(data,isNotification) { // notification events form temperature service
 							convertHumidityData(data, function(ambientTemperature, humidity) {
 							
@@ -195,7 +199,9 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 					//console.log("BarometricPressure characteristicsDiscover " + characteristics);
 					var startSamplingBarometricPressureData = characteristics[1];
 					var notifyServiceBarometricPressureData = characteristics[0];
-					
+					if (notifyServiceBarometricPressureData == undefined || startSamplingBarometricPressureData == undefined) {
+						return;
+					}
 					notifyServiceBarometricPressureData.on('data', function(data,isNotification) { // notification events form temperature service
 						convertBarometricPressureData(data, function(barometricPressure) {
 							//console.log("Barometric Pressure: ", barometricPressure);
@@ -234,7 +240,9 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 					//console.log("MPU9250 characteristicsDiscover " + characteristics);
 					var startSamplingMPU9250Data = characteristics[1];
 					var notifyServiceMPU9250Data = characteristics[0];
-					
+					if (notifyServiceMPU9250Data == undefined || startSamplingMPU9250Data == undefined) {
+						return;
+					}
 					notifyServiceMPU9250Data.on('data', function(data,isNotification) { // notification events form temperature service
 						
 						convertMPU9250Data(data, function(xA, yA, zA, xG, yG, zG, xM, yM, zM) {
@@ -290,7 +298,9 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 					//console.log("Luxometer characteristicsDiscover " + characteristics);
 					var startSamplingLuxometerData = characteristics[1];
 					var notifyServiceLuxometerData = characteristics[0];
-					
+					if (notifyServiceLuxometerData == undefined || startSamplingLuxometerData == undefined) {
+							return;
+						}
 					notifyServiceLuxometerData.on('data', function(data,isNotification) { // notification events form temperature service
 						convertLuxometerData(data, function(lux) {
 							// data in lux

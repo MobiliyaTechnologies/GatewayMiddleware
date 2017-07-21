@@ -152,7 +152,9 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 					if (capIdAccelerometer > -1 || capIdGyroscope > -1) {		
 						//var AccelerometerOrientationService = services[9]; //uuid: 0xa4e649f4-4be5-11e5-885d-feff819cdc9f
 						var AccelerometerOrientationService = services[i]; //uuid: 0xa4e649f4-4be5-11e5-885d-feff819cdc9f
-
+						if (AccelerometerOrientationService == undefined) {
+							return;
+						}
 						AccelerometerOrientationService.discoverCharacteristics(null,function(error,characteristics) {
 							console.log('discovered the following characteristics in AccelerometerOrientationService:');
 							for ( var i in characteristics) {
@@ -163,7 +165,9 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 							console.log("AccelerometerOrientationService characteristicsDiscovered");
 							if (capIdGyroscope > -1) {	
 								var Orientation = characteristics[1];
-
+								if (Orientation == undefined) {
+									return;
+								}
 								Orientation.on('data', function(data,isNotification) {
 									// formatting data
 									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdGyroscope,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
@@ -179,6 +183,9 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 							}
 							if (capIdAccelerometer > -1) {	
 								var Accelerometer = characteristics[0];
+								if (Accelerometer == undefined) {
+									return;
+								}
 								Accelerometer.on('data', function(data,isNotification) {
 									// formatting data
 									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAccelerometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
@@ -201,6 +208,9 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 					if(capIdHumidity > -1 || capIdTemperature > -1 || capIdUVIndex > -1 || capIdAmbientLight > -1 || capIdBarometricPressure > -1 || capIdNoiseLevel > -1) {
 						//var EnvironmentService = services[4]; //uuid: 0x181a
 						var EnvironmentService = services[i]; //uuid: 0x181a
+						if (EnvironmentService == undefined) {
+							return;
+						}
 						EnvironmentService.discoverCharacteristics(null,function(error,characteristics) {
 							console.log('discovered the following characteristics in environment service:');
 							for ( var i in characteristics) {
@@ -215,7 +225,9 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 							var Humidity = characteristics[3];						 //2a6f
 							var AmbientLight = characteristics[4];				  //c8546913bfd945eb8dde9f8754f4a32e
 							var NoiseLevel = characteristics[5];				   //c8546913bf0245eb8dde9f8754f4a32e
-
+							if (Humidity == undefined || Temperature == undefined || UVIndex == undefined || BarometricPressure == undefined || AmbientLight == undefined || NoiseLevel == undefined) {
+									return;
+								}
 							EnvironInterval = setInterval(function (){
 								readEnvironment(CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,AmbientLight,BarometricPressure,NoiseLevel,SensorDetails,capIdHumidity,
 												capIdTemperature,capIdUVIndex,capIdAmbientLight,capIdBarometricPressure,capIdNoiseLevel,AmbientTempUnit)
