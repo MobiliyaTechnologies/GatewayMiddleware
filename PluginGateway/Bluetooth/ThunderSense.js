@@ -76,12 +76,14 @@ ThunderboardSenseDisconnectHandler = function(peripheral,GroupId) {
 			console.log(peripheral.uuid + " Disconnected");
 		}
 		bus.emit('sensor_group_disconnected',GroupId);
+		bus.emit('log', 'Disconnected to ThunderBoard-Sense: '	+ peripheral.uuid);
 	});
 };
 
-ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities,BLEConnectionDuration){
-	
-	disconnectHandler = setTimeout(ThunderboardSenseDisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
+ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){
+	if(ContinuousBLEConnection===0){
+		disconnectHandler = setTimeout(ThunderboardSenseDisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
+	}
 	var AmbientTempUnit = "Celsius";
 	
 	if (Capabilities != undefined) {
@@ -101,6 +103,7 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 		
 		bus.emit('sensor_group_connected',SensorDetails.GroupId);
 		console.log('connected to peripheral (ThunderBoard-Sense): '	+ peripheral.uuid);
+		bus.emit('log', 'Disconnected to ThunderBoard-Sense: '	+ peripheral.uuid);
 
 		peripheral.discoverServices([],function(error, services) {
 			//console.log('discovered the following services:',services);
@@ -249,10 +252,13 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 	peripheral.once('disconnect', function(){
 		
 		bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
+		bus.emit('log', 'Disconnected to ThunderBoard-Sense: '	+ peripheral.uuid);
 		console.log(peripheral.uuid + " Disconnected (once)");
 		clearInterval(LightInterval);
 		clearInterval(EnvironInterval);
-		clearTimeout(disconnectHandler);
+		if(ContinuousBLEConnection===0){
+			clearTimeout(disconnectHandler);
+		}
 	});
 }
 module.exports = ThunderboardSense;

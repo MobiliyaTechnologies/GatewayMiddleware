@@ -1,5 +1,6 @@
 var bus = require('../../eventbus');
 function SensorTag1350 () { };//class for SensorTag1350
+var disconnectHandler;
 
 SensorTag1350DisconnectHandler = function(peripheral,GroupId) {
 	peripheral.disconnect(function(error){
@@ -10,13 +11,14 @@ SensorTag1350DisconnectHandler = function(peripheral,GroupId) {
 			console.log(peripheral.uuid + " Disconnected");
 		}
 		bus.emit('sensor_group_disconnected',GroupId);
+		bus.emit('log', 'Disconnected to SensorTag1350: '	+ peripheral.uuid);
 	});
 };
 
-SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities,BLEConnectionDuration){ // sensor tag 1350 handle
-	
-	setTimeout(SensorTag1350DisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
-	
+SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){ // sensor tag 1350 handle
+	if(ContinuousBLEConnection === 0) {
+		disconnectHandler = setTimeout(SensorTag1350DisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
+	}
 	var AmbientTempUnit = "Celsius";
 	var ObjectTempUnit = "Celsius";
 	
@@ -38,6 +40,7 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 		
 		bus.emit('sensor_group_connected',SensorDetails.GroupId);
 		console.log('connected to peripheral (SensorTag1350): '	+ peripheral.uuid);
+		bus.emit('log', 'connected to SensorTag1350: '	+ peripheral.uuid);
 		process.on('SIGINT', function() {
 			var i_should_exit = true;
 			console.log("Caught interrupt signal");
@@ -48,7 +51,10 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 					console.log(peripheral.uuid + " Disconnected");
 				}
 				bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
-				clearTimeout(SensorTag1350DisconnectHandler);
+				bus.emit('log', 'Disconnected to SensorTag1350: '	+ peripheral.uuid);
+				if(ContinuousBLEConnection === 0) {
+					clearTimeout(disconnectHandler);
+				}
 			});
 			if(i_should_exit)
 					process.exit();

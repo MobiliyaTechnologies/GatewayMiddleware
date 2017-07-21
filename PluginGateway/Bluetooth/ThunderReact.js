@@ -62,13 +62,15 @@ ThunderboardReactDisconnectHandler = function(peripheral,GroupId) {
 			console.log(peripheral.uuid + " Disconnected");
 		}
 		
+		bus.emit('log', 'Disconnected to ThunderBoard-React: '	+ peripheral.uuid);
 		bus.emit('sensor_group_disconnected',GroupId);
 	});
 };
 
-ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities,BLEConnectionDuration){
-	
-	disconnectHandler = setTimeout(ThunderboardReactDisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
+ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){
+	if(ContinuousBLEConnection===0){
+		disconnectHandler = setTimeout(ThunderboardReactDisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
+	}
 	var AmbientTempUnit = "Celsius";
 	if (Capabilities != undefined) {
 		Capabilities.forEach(function(elem, index) {
@@ -86,6 +88,7 @@ ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudA
 		}
 		bus.emit('sensor_group_connected',SensorDetails.GroupId);
 		console.log('connected to peripheral (ThunderBoard-React): '	+ peripheral.uuid);
+		bus.emit('log', 'connected to ThunderBoard-React: '	+ peripheral.uuid);
 
 		peripheral.discoverServices([],function(error, services) {
 			//console.log('discovered the following services:',services);
@@ -240,10 +243,13 @@ ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudA
 	// listening to peripheral disconnect event to debug
 	peripheral.once('disconnect', function(){
 		bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
+		bus.emit('log', 'Disconnected to ThunderBoard-React: '	+ peripheral.uuid);
 		console.log(peripheral.uuid + " Disconnected (once)");
 		clearInterval(LightInterval);
 		clearInterval(EnvironInterval);
-		clearTimeout(disconnectHandler);
+		if(ContinuousBLEConnection===0){
+			clearTimeout(disconnectHandler);
+		}
 	});
 }
 module.exports = ThunderboardReact;

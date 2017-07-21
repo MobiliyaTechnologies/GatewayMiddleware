@@ -27,7 +27,7 @@ Geolocation.prototype.GeolocationHandler = function (CloudAdaptor,DataWrapper,BL
 	
 	setInterval(function() {
 		if (groupList.length > 0) {
-			console.log("Geolocation  sent");
+			console.log("Geolocation  SENT:");
 			var json_data = {GroupIds:groupList.toArray(),Latitude:config.Latitude,Longitude:config.Longitude,Timestamp:new Date()};
 			CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 		} else {

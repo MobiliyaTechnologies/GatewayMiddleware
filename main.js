@@ -105,7 +105,7 @@ function BLEApp (){
 		if (index == -1){
 			// condition when the device found is not in whitelist
 			console.log('Found device with local name which is not a whitelist : '+ peripheral.id);
-			bus.emit('log','Found device with local name which is not a whitelist : '+ peripheral.id);
+			//bus.emit('log','Found device with local name which is not a whitelist : '+ peripheral.id);
 			//create a array for the devices which are discovered now, but may have been whitelisted in runtime later
 			// NOTE : It may create large memory if so many decvices are discovered over time, should apply filter in the device name
 			if (CompatibleSensors.indexOf(peripheral.advertisement.localName) !== -1){
@@ -115,32 +115,30 @@ function BLEApp (){
 		}else{
 			// check for particular case of the whitelist address
 			console.log(peripheral.id);
-			/*
-			var isExists = PeripheralList.has(peripheral.id, function (a, b) {
-				//console.log("has ", b);
-				return a === JSON.parse(b).id;
-			});*/
-			var found = false;
-			PeripheralList.forEach(function(element, indx){
-					//console.log(JSON.stringify(element));
-					//console.log("List items: ", element.id);
-					if(element.id == peripheral.id) {
-						found = true;
-						return;
-					}
-			}); 
-			if (!found) {
-				//Add to list
-				console.log("List PUSH ", peripheral.id)
-				PeripheralList.push(peripheral);
+			if (config.ContinuousBLEConnection === 0) {
+				var found = false;
 				PeripheralList.forEach(function(element, indx){
-					//console.log(JSON.stringify(element));
-					console.log("List items: ", element.id);
+						//console.log(JSON.stringify(element));
+						//console.log("List items: ", element.id);
+						if(element.id == peripheral.id) {
+							found = true;
+							return;
+						}
 				}); 
-			} else {	
-				console.log("List PUSH")
+				if (!found) {
+					//Add to list
+					console.log("List PUSH: ", peripheral.id)
+					PeripheralList.push(peripheral);
+					/*PeripheralList.forEach(function(element, indx){
+						//console.log(JSON.stringify(element));
+						console.log("List items: ", element.id);
+					});*/ 
+				} else {	
+					console.log("List PUSH")
+				}
+			} else {
+				connectPeripheral(peripheral);
 			}
-			
 		}
 	});
 	
@@ -163,39 +161,52 @@ function BLEApp (){
 };
 
 function HandleQueue() {
-	
+	console.log('HandleQueue ',  new Date());
 	for(var i=0; i<SimultaneousBLEConnections; i++) {
 		var peripheral = PeripheralList.shift();
-		if	(peripheral != undefined) {
+		connectPeripheral(peripheral);
+	}
+}
+
+function connectPeripheral(peripheral) {
+	if	(peripheral != undefined) {
 			console.log("List POP: ", peripheral.id);
-				bus.emit('log',"Whitelisted device found: " + peripheral.id);
+				//bus.emit('log',"Whitelisted device found: " + peripheral.id);
 				var SensorId = peripheral.id.toLowerCase();
+				if(whitelistContentAll[SensorId] == undefined) {
+					return;
+				}
 				if (whitelistContentAll[SensorId].SensorType == "SensorTag2650"){
 					var ST_2650_DS = new SensorDataStructure();
 					//var ST_2650_CloudAdaptor = new CloudAdaptor();
 					var ST_2650_Handle = new SensorTag2650();
-					ST_2650_Handle.SensorTagHandle2650(peripheral,CloudAdapterInstance.AzureHandle,ST_2650_DS.JSON_data,whitelistContentAll[SensorId],Capabilities,BLEConnectionDuration);
+					ST_2650_Handle.SensorTagHandle2650(peripheral,CloudAdapterInstance.AzureHandle,ST_2650_DS.JSON_data,whitelistContentAll[SensorId],
+													   Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 				}else if (whitelistContentAll[SensorId].SensorType == "SensorTag1350"){
 					var ST1350_DS = new SensorDataStructure();
 					//var ST1350_CloudAdaptor = new CloudAdaptor();
 					var ST1350_Handle = new SensorTag1350();
-					ST1350_Handle.SensorTagHandle1350(peripheral,CloudAdapterInstance.AzureHandle,ST1350_DS.JSON_data,whitelistContentAll[SensorId],Capabilities,BLEConnectionDuration);
+					ST1350_Handle.SensorTagHandle1350(peripheral,CloudAdapterInstance.AzureHandle,ST1350_DS.JSON_data,whitelistContentAll[SensorId],
+													  Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 				}else if (whitelistContentAll[SensorId].SensorType == "Bosch-XDK"){
 					var XDK_DS = new SensorDataStructure();
 					//var XDK_CloudAdaptor = new CloudAdaptor();
 					var XDK_Handle = new XDK();
-					XDK_Handle.XDKHandle(peripheral,CloudAdapterInstance.AzureHandle,XDK_DS.JSON_data,whitelistContentAll[SensorId],Capabilities,BLEConnectionDuration);
+					XDK_Handle.XDKHandle(peripheral,CloudAdapterInstance.AzureHandle,XDK_DS.JSON_data,whitelistContentAll[SensorId],
+										 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 				}else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-React"){
 				//if (peripheral.id == "000b571c53ae"){ // for testing the sensor locally without whitelisting
 					var ThunderboardReact_DS = new SensorDataStructure();
 					//var ThunderboardReact_CloudAdaptor = new CloudAdaptor();
 					var ThunderboardReact_Handle = new ThunderboardReact();
-					ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardReact_DS.JSON_data,whitelistContentAll[SensorId],Capabilities,BLEConnectionDuration);
+					ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardReact_DS.JSON_data,whitelistContentAll[SensorId],
+																	 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 				}else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-Sense"){
 					var ThunderboardSense_DS = new SensorDataStructure();
 					//var ThunderboardSense_CloudAdaptor = new CloudAdaptor();
 					var ThunderboardSense_Handle = new ThunderboardSense();
-					ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId],Capabilities,BLEConnectionDuration);
+					ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId],
+																	 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 				}else{
 					//console.log(peripheral);
 					// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found
@@ -203,11 +214,9 @@ function HandleQueue() {
 					bus.emit('log','No compatible library for this sensor: ' + peripheral.id);
 				}	
 		} else {
-		console.log("List POP");
+			console.log("peripheral undifined");
 		}
-	}
 }
-
 
 //Switch off the Cloud Led as the cloud is yet to start
 CloudLed("0");
@@ -239,4 +248,6 @@ CloudAdapterInstance.AzureInit(function (){
 
 });
 
-HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
+if (config.ContinuousBLEConnection === 0) {
+	HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
+}
