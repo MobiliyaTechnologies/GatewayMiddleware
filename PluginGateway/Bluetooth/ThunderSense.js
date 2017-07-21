@@ -103,7 +103,7 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 		
 		bus.emit('sensor_group_connected',SensorDetails.GroupId);
 		console.log('connected to peripheral (ThunderBoard-Sense): '	+ peripheral.uuid);
-		bus.emit('log', 'Disconnected to ThunderBoard-Sense: '	+ peripheral.uuid);
+		bus.emit('log', 'connected to ThunderBoard-Sense: '	+ peripheral.uuid);
 
 		peripheral.discoverServices([],function(error, services) {
 			//console.log('discovered the following services:',services);

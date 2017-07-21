@@ -95,8 +95,8 @@ function BLEApp (){
 	
 	//start scanning for ble services
 	noble.startScanning(null,allowDuplicates);
-	console.log("started scanning for ble sevices with following whitelisted address :",whitelistAddressAll);
-	bus.emit('log',"Started scanning for ble sevices with whitelisted address");
+	console.log("ScanningStarted");
+	bus.emit('log',"ScanningStarted");
 	//callback when BLE scan discovers a new ble device, return a peripheral object
 	noble.on('discover',function(peripheral) { 
 		//console.log(peripheral)
@@ -134,7 +134,7 @@ function BLEApp (){
 						console.log("List items: ", element.id);
 					});*/ 
 				} else {	
-					console.log("List PUSH")
+					//console.log("List PUSH")
 				}
 			} else {
 				connectPeripheral(peripheral);
@@ -152,10 +152,17 @@ function BLEApp (){
 	// if a scan stop happens internally in a BLE stack for unknown reasons, start scanning again after a timeout
 	// NOTE: not to be used with state change listener
 	noble.on('scanStop', function(){
-		console.log("Scanning Stopped");
+		console.log("ScanningStopped");
+		bus.emit('log',"ScanningStopped");
+		var t = 2000;
+		if(config.BLEReconnectionInterval - 3000 > 2000) {
+			t = config.BLEReconnectionInterval - 3000;
+		}
 		setTimeout(function(){
-			noble.startScanning();
-		},2000);
+			noble.startScanning(null,allowDuplicates);
+			console.log("ScanningStarted");
+			bus.emit('log',"ScanningStarted");
+		},t);
 	});
 
 };
