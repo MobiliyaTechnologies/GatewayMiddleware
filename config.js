@@ -9,8 +9,8 @@ GatewayTimezone:"Asia/Kolkata",
 Latitude:18.5521273,
 Longitude:73.7917362,
 ContinuousBLEConnection:0,	//0: Connect at intervals, 1: Continuous connection
-SimultaneousBLEConnections:2,
-BLEConnectionDuration:5000,
-BLEReconnectionInterval:6000
+SimultaneousBLEConnections:1,
+BLEConnectionDuration:3000,
+BLEReconnectionInterval:4000
 };
 module.exports = config;

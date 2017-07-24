@@ -10,6 +10,7 @@ SensorTag2650DisconnectHandler = function(peripheral,GroupId) {
 		} else {
 			console.log(peripheral.uuid + " Disconnected");
 		}
+		bus.emit('disconnected', peripheral.uuid);
 		bus.emit('sensor_group_disconnected',GroupId);
 		bus.emit('log', 'Disconnected to SensorTag2650: '	+ peripheral.uuid);
 	});
@@ -38,6 +39,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			return;
 		}
 		
+		bus.emit('connected', peripheral.uuid);
 		bus.emit('sensor_group_connected',SensorDetails.GroupId);
 		console.log('connected to peripheral (SensorTag2650): '	+ peripheral.uuid);
 		bus.emit('log', 'connected to SensorTag2650: '	+ peripheral.uuid);
@@ -50,6 +52,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 				} else {
 					console.log(peripheral.uuid + " Disconnected");
 				}
+				bus.emit('disconnected', peripheral.uuid);
 				bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
 				bus.emit('log', 'Disconnected to SensorTag2650: '	+ peripheral.uuid);
 				if(ContinuousBLEConnection===0){

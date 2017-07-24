@@ -7,13 +7,13 @@ var groupList = new List();
 var addGroup = function (groupId) {
 	//console.log("Geolocation addGroup");
 	if(!groupList.has(groupId)) {
-	console.log("Geolocation Group added");
+		//console.log("Geolocation Group added");
 		groupList.push(groupId);
     }
 }
 //Remove group in list:
 var removeGroup = function (groupId) {
-	console.log("Geolocation removeGroup");
+	//console.log("Geolocation removeGroup");
 	groupList.delete(groupId);
 }
 
@@ -31,7 +31,7 @@ Geolocation.prototype.GeolocationHandler = function (CloudAdaptor,DataWrapper,BL
 			var json_data = {GroupIds:groupList.toArray(),Latitude:config.Latitude,Longitude:config.Longitude,Timestamp:new Date()};
 			CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 		} else {
-			console.log("Geolocation not sent");
+			//console.log("Geolocation not sent");
 		}
 	}, BLEReconnectionInterval);
 	

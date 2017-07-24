@@ -25,6 +25,7 @@ var bus = require('./eventbus');
 var HandleQueueInterval;
 var List = require("collections/list");
 var PeripheralList = new List([]);
+var ConnectedPeripheralList = new List([]);
 var capabilitiesFile = 'capabilities.json';
 var Capabilities;
 var SimultaneousBLEConnections = config.SimultaneousBLEConnections;
@@ -64,11 +65,60 @@ function getSensorUnit() {
 	});
 }
 
+var sensorConnectedHandler = function (peripheralId) {
+	console.log("sensorConnectedHandler");
+	var found = false;
+	ConnectedPeripheralList.forEach(function(element, indx){
+		if(element == peripheralId) {
+			found = true;
+			return;
+		}
+	}); 
+	if (!found) {
+		//Add to list
+		ConnectedPeripheralList.push(peripheralId);
+	}
+	ConnectedPeripheralList.forEach(function(element, indx){
+		console.log("sensorConnectedHandler connectedPeripheral ", element); 
+	}); 
+}
+
+var sensorDisconnectedHandler = function (peripheralId) {
+	console.log("sensorDisconnectedHandler");
+	 var found = false;
+	ConnectedPeripheralList.forEach(function(element, indx){
+		if(element == peripheralId) {
+			found = true;
+			return;
+		}
+	}); 
+	if (found) {
+		//Remove from list
+		ConnectedPeripheralList.delete(peripheralId);
+	}
+	ConnectedPeripheralList.forEach(function(element, indx){
+		console.log("sensorDisconnectedHandler connectedPeripheral ", element); 
+	}); 
+}
+
+function isPeripheralConnected(peripheralId) {
+	var found = false;
+	ConnectedPeripheralList.forEach(function(element, indx){
+		if(element == peripheralId) {
+			found = true;
+			return;
+		}
+	}); 
+	return found;
+}
+
 updateSensorList();
 getSensorUnit();
 
 //Assign the event handler to an event:
 bus.on('updatelist', myUpdateEventHandler);
+bus.on('connected', sensorConnectedHandler);
+bus.on('disconnected', sensorDisconnectedHandler);
 
 //function which retireves the whitelist address from the api and saves to file "whitelist.json", and updates the global variable "whitelistAddressAll,whitelistContentAll"
 //cb is the callback function after the getwhitelist for updating the global variables
@@ -171,7 +221,9 @@ function HandleQueue() {
 	console.log('HandleQueue ',  new Date());
 	for(var i=0; i<SimultaneousBLEConnections; i++) {
 		var peripheral = PeripheralList.shift();
-		connectPeripheral(peripheral);
+		if(!isPeripheralConnected(peripheral)) {
+		   connectPeripheral(peripheral); 
+		}
 	}
 }
 
