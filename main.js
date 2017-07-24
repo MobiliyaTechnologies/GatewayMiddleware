@@ -140,11 +140,18 @@ function BLEApp (){
 		} else {
 			noble.stopScanning();
 		}
+		
 	});
 	*/
 	
 	//start scanning for ble services
-	noble.startScanning(null,allowDuplicates);
+	try {
+		noble.startScanning(null,allowDuplicates);
+	} catch(error) {
+		console.log("Error in start Scanning");
+		console.log(error);
+		return;
+	}
 	console.log("ScanningStarted");
 	bus.emit('log',"ScanningStarted");
 	//callback when BLE scan discovers a new ble device, return a peripheral object
@@ -204,15 +211,18 @@ function BLEApp (){
 	noble.on('scanStop', function(){
 		console.log("ScanningStopped");
 		bus.emit('log',"ScanningStopped");
-		var t = 2000;
+		/*var t = 2000;
 		if(config.BLEReconnectionInterval - 3000 > 2000) {
 			t = config.BLEReconnectionInterval - 3000;
-		}
+		}*/
+		//clearPeripheralList
+		PeripheralList.clear();
+		
 		setTimeout(function(){
 			noble.startScanning(null,allowDuplicates);
 			console.log("ScanningStarted");
 			bus.emit('log',"ScanningStarted");
-		},t);
+		}, config.BLEReconnectionInterval);
 	});
 
 };
@@ -221,8 +231,14 @@ function HandleQueue() {
 	console.log('HandleQueue ',  new Date());
 	for(var i=0; i<SimultaneousBLEConnections; i++) {
 		var peripheral = PeripheralList.shift();
-		if(!isPeripheralConnected(peripheral)) {
-		   connectPeripheral(peripheral); 
+		if(peripheral == undefined) {
+			return;
+		}
+		if(!isPeripheralConnected(peripheral.id)) {
+			console.log("connectPeripheral ", peripheral.id);
+			connectPeripheral(peripheral); 
+		} else {
+			console.log("Peripheral Already Connected ", peripheral.id);
 		}
 	}
 }
