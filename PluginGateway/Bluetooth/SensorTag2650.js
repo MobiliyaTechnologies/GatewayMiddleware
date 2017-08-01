@@ -1,28 +1,7 @@
 var bus = require('../../eventbus');
 function SensorTag2650() { };//class for sesnorTag 2650
-var disconnectHandler;
-
-SensorTag2650DisconnectHandler = function(peripheral,GroupId) {
-	console.log("Called SensorTag2650DisconnectHandler" );
-	peripheral.disconnect(function(error){
-		if (error) {
-			console.log(peripheral.uuid + " Disconnect error");
-			console.log(error);
-		}/* else {
-			console.log(peripheral.uuid + " Disconnected");
-		}
-		bus.emit('disconnected', peripheral.uuid);
-		bus.emit('sensor_group_disconnected',GroupId);
-		bus.emit('log', 'Disconnected to SensorTag2650: '	+ peripheral.uuid);
-		*/
-	});
-};
 
 SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){ // sensor tag 2650 handle
-	if(ContinuousBLEConnection===0) {
-		console.log("SetTiomout  for DisconnectHandler");
-		disconnectHandler = setTimeout(SensorTag2650DisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
-	}
 	var AmbientTempUnit = "Celsius";
 	var ObjectTempUnit = "Celsius";
 	
@@ -42,7 +21,8 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			return;
 		}
 		
-		bus.emit('connected', peripheral.uuid);
+		//bus.emit('connected', peripheral.uuid);
+		bus.emit('connected', peripheral);
 		bus.emit('sensor_group_connected',SensorDetails.GroupId);
 		console.log('connected to peripheral (SensorTag2650): '	+ peripheral.uuid);
 		bus.emit('log', 'connected to SensorTag2650: '	+ peripheral.uuid);
@@ -59,12 +39,10 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 				bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
 				bus.emit('log', 'Disconnected to SensorTag2650: '	+ peripheral.uuid);
 				*/
-				if(ContinuousBLEConnection===0){
-					clearTimeout(disconnectHandler);
-				}
 			});
-			if(i_should_exit)
-					process.exit();
+			if(i_should_exit) {
+				process.exit();
+			}
 		});
 		
 		peripheral.once('disconnect', function() {
@@ -72,9 +50,6 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			bus.emit('disconnected', peripheral.uuid);
 			bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
 			bus.emit('log', 'Disconnected to SensorTag2650: '	+ peripheral.uuid);
-			if(ContinuousBLEConnection===0) {
-				clearTimeout(disconnectHandler);
-			}
 		});
 		
 		console.log('discoverServices for '	+ peripheral.uuid);

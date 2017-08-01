@@ -1,24 +1,7 @@
 var bus = require('../../eventbus');
 function SensorTag1350 () { };//class for SensorTag1350
-var disconnectHandler;
 
-SensorTag1350DisconnectHandler = function(peripheral,GroupId) {
-	peripheral.disconnect(function(error){
-		if (error) {
-			console.log(peripheral.uuid + " Disconnect error");
-			console.log(error);
-		} else {
-			console.log(peripheral.uuid + " Disconnected");
-		}
-		bus.emit('sensor_group_disconnected',GroupId);
-		bus.emit('log', 'Disconnected to SensorTag1350: '	+ peripheral.uuid);
-	});
-};
-
-SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){ // sensor tag 1350 handle
-	if(ContinuousBLEConnection === 0) {
-		disconnectHandler = setTimeout(SensorTag1350DisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
-	}
+SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities,BLEConnectionDuration,ContinuousBLEConnection) { // sensor tag 1350 handle
 	var AmbientTempUnit = "Celsius";
 	var ObjectTempUnit = "Celsius";
 	
@@ -38,6 +21,7 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 			return;
 		}
 		
+		bus.emit('connected', peripheral);
 		bus.emit('sensor_group_connected',SensorDetails.GroupId);
 		console.log('connected to peripheral (SensorTag1350): '	+ peripheral.uuid);
 		bus.emit('log', 'connected to SensorTag1350: '	+ peripheral.uuid);
@@ -52,9 +36,6 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 				}
 				bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
 				bus.emit('log', 'Disconnected to SensorTag1350: '	+ peripheral.uuid);
-				if(ContinuousBLEConnection === 0) {
-					clearTimeout(disconnectHandler);
-				}
 			});
 			if(i_should_exit)
 					process.exit();
@@ -331,6 +312,13 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 			}
 		});
 	});
+	peripheral.once('disconnect', function() {
+        console.log(peripheral.uuid + " Disconnected");
+        bus.emit('disconnected', peripheral.uuid);
+        bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
+		bus.emit('log', 'Disconnected to Sensortag1350: '	+ peripheral.uuid);
+	});
+
 };
 
 convertIrTemperatureData = function(data, AmbientTempUnit, ObjectTempUnit, callback) {

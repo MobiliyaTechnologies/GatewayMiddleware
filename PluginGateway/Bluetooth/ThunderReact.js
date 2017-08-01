@@ -2,7 +2,6 @@ var bus = require('../../eventbus');
 function ThunderboardReact () { };//class for thunderboard react
 var EnvironInterval;
 var LightInterval;
-var disconnectHandler;
 
 function readEnvironment (CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,SensorDetails,capIdHumidity,capIdTemperature,capIdUVIndex) {
 	try {
@@ -53,24 +52,7 @@ function readAmbientLight(CloudAdaptor,DataWrapper,AmbientLight,SensorDetails,ca
 	}
 };
 
-ThunderboardReactDisconnectHandler = function(peripheral,GroupId) {
-	peripheral.disconnect(function(error){
-		if (error) {
-			console.log(peripheral.uuid + " Disconnect error");
-			console.log(error);
-		} else {
-			console.log(peripheral.uuid + " Disconnected");
-		}
-		
-		bus.emit('log', 'Disconnected to ThunderBoard-React: '	+ peripheral.uuid);
-		bus.emit('sensor_group_disconnected',GroupId);
-	});
-};
-
 ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){
-	if(ContinuousBLEConnection===0){
-		disconnectHandler = setTimeout(ThunderboardReactDisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
-	}
 	var AmbientTempUnit = "Celsius";
 	if (Capabilities != undefined) {
 		Capabilities.forEach(function(elem, index) {
@@ -86,6 +68,7 @@ ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudA
 			console.log(error);
 			return;
 		}
+		bus.emit('connected', peripheral);
 		bus.emit('sensor_group_connected',SensorDetails.GroupId);
 		console.log('connected to peripheral (ThunderBoard-React): '	+ peripheral.uuid);
 		bus.emit('log', 'connected to ThunderBoard-React: '	+ peripheral.uuid);
@@ -241,15 +224,13 @@ ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudA
 	});
 	
 	// listening to peripheral disconnect event to debug
-	peripheral.once('disconnect', function(){
-		bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
-		bus.emit('log', 'Disconnected to ThunderBoard-React: '	+ peripheral.uuid);
-		console.log(peripheral.uuid + " Disconnected (once)");
-		clearInterval(LightInterval);
-		clearInterval(EnvironInterval);
-		if(ContinuousBLEConnection===0){
-			clearTimeout(disconnectHandler);
-		}
-	});
+    peripheral.once('disconnect', function(){
+        console.log(peripheral.uuid + " Disconnected");
+        bus.emit('disconnected', peripheral.uuid);
+        bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
+        bus.emit('log', 'Disconnected to ThunderBoard-React: '	+ peripheral.uuid);
+        clearInterval(LightInterval);
+        clearInterval(EnvironInterval);
+    });
 }
 module.exports = ThunderboardReact;

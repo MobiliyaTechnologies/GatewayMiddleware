@@ -26,10 +26,13 @@ var HandleQueueInterval;
 var List = require("collections/list");
 var PeripheralList = new List([]);
 var ConnectedPeripheralList = new List([]);
+var ConnectedPeripheralDetails = [];
 var capabilitiesFile = 'capabilities.json';
 var Capabilities;
 var SimultaneousBLEConnections = config.SimultaneousBLEConnections;
 var BLEConnectionDuration = config.BLEConnectionDuration;
+var disconnectHandler;
+var disconnectHandlerCalled = 0;
 
 //Create an event handler:
 var myUpdateEventHandler = function () {
@@ -65,24 +68,40 @@ function getSensorUnit() {
 	});
 }
 
-var sensorConnectedHandler = function (peripheralId) {
+var sensorConnectedHandler = function (peripheral) {
 	console.log("sensorConnectedHandler");
 	var found = false;
-	ConnectedPeripheralList.forEach(function(element, indx){
-		if(element == peripheralId) {
+    for (var i = 0;i < ConnectedPeripheralDetails.length;i++) {
+		if(ConnectedPeripheralDetails[i].id == peripheral.id) {
 			found = true;
 			return;
 		}
-	}); 
-	if (!found) {
-		//Add to list
-		ConnectedPeripheralList.push(peripheralId);
 	}
-	ConnectedPeripheralList.forEach(function(element, indx){
-		console.log("sensorConnectedHandler connectedPeripheral ", element); 
-	}); 
+    if (!found) {
+        ConnectedPeripheralDetails.push(peripheral);
+    }
 }
 
+var peripheralDisconnectHandler = function() {
+    for (var i = 0;i < ConnectedPeripheralDetails.length;i++) {
+        var peripheral = ConnectedPeripheralDetails[i];
+        console.log(peripheral.uuid + " Disconnect handler");
+        ConnectedPeripheralDetails[i].disconnect(function(error) {
+    	    if(error) {
+	    	    console.log(this.uuid + " Disconnect error");
+		        console.log(error);
+		    } else {
+			    console.log(this.uuid + " Disconnect handler");
+		    }
+        });
+    }
+
+    //ConnectedPeripheralDetails = [];
+    clearTimeout(disconnectHandler);
+    disconnectHandlerCalled = 0;
+};
+
+/*
 var sensorDisconnectedHandler = function (peripheralId) {
 	console.log("sensorDisconnectedHandler");
 	 var found = false;
@@ -99,7 +118,7 @@ var sensorDisconnectedHandler = function (peripheralId) {
 	ConnectedPeripheralList.forEach(function(element, indx){
 		console.log("sensorDisconnectedHandler connectedPeripheral ", element); 
 	}); 
-}
+}*/
 
 function isPeripheralConnected(peripheralId) {
 	var found = false;
@@ -118,7 +137,6 @@ getSensorUnit();
 //Assign the event handler to an event:
 bus.on('updatelist', myUpdateEventHandler);
 bus.on('connected', sensorConnectedHandler);
-bus.on('disconnected', sensorDisconnectedHandler);
 
 //function which retireves the whitelist address from the api and saves to file "whitelist.json", and updates the global variable "whitelistAddressAll,whitelistContentAll"
 //cb is the callback function after the getwhitelist for updating the global variables
@@ -159,7 +177,7 @@ function BLEApp (){
 		//console.log(peripheral)
 		// search for the local devices at, if it is a whitelisted address, connect to its specific sensor library
 		var index = whitelistAddressAll.indexOf(peripheral.id);
-		if (index == -1){
+		if (index == -1) {
 			// condition when the device found is not in whitelist
 			console.log('Found device with local name which is not a whitelist : '+ peripheral.id);
 			//bus.emit('log','Found device with local name which is not a whitelist : '+ peripheral.id);
@@ -169,7 +187,7 @@ function BLEApp (){
 				DiscoveredPeripheral.push(peripheral);
 				//console.log(DiscoveredPeripheral);
 			}
-		}else{
+		} else {
 			// check for particular case of the whitelist address
 			console.log(peripheral.id);
 			if (config.ContinuousBLEConnection === 0) {
@@ -181,16 +199,28 @@ function BLEApp (){
 							found = true;
 							return;
 						}
-				}); 
+				});
 				if (!found) {
 					//Add to list
-					console.log("List PUSH: ", peripheral.id)
-					PeripheralList.push(peripheral);
+                    var justConnected = 0;
+					console.log("List PUSH: ", peripheral.id);
+                    for (var i = 0;i < ConnectedPeripheralDetails.length;i++) {
+                        if(ConnectedPeripheralDetails[i] && (ConnectedPeripheralDetails[i].id == peripheral.id)) {
+                            justConnected = 1;
+                            break;
+                        }
+                    }
+                    console.log("Adding " + peripheral.id);
+                    if (justConnected || (PeripheralList.length == 0)) {
+    					PeripheralList.push(peripheral);
+                    } else {
+    					PeripheralList.unshift(peripheral);
+                    }
 					/*PeripheralList.forEach(function(element, indx){
 						//console.log(JSON.stringify(element));
 						console.log("List items: ", element.id);
 					});*/ 
-				} else {	
+				} else {
 					//console.log("List PUSH")
 				}
 			} else {
@@ -218,29 +248,41 @@ function BLEApp (){
 		//clearPeripheralList
 		PeripheralList.clear();
 		
-		setTimeout(function(){
-			noble.startScanning(null,allowDuplicates);
-			console.log("ScanningStarted");
-			bus.emit('log',"ScanningStarted");
-		}, config.BLEReconnectionInterval);
+            console.log("Scanning to start soon");
+		    setTimeout(function(){
+			    noble.startScanning(null,allowDuplicates);
+			    console.log("ScanningStarted");
+			    bus.emit('log',"ScanningStarted");
+		    //}, config.BLEReconnectionInterval);
+		    }, 1000);
 	});
 
 };
 
 function HandleQueue() {
+    var setDisconnectHandler = 0;
+    ConnectedPeripheralDetails = [];
+    if (disconnectHandlerCalled) {
+        return;
+    }
 	console.log('HandleQueue ',  new Date());
-	for(var i=0; i<SimultaneousBLEConnections; i++) {
+	for(var i = 0;i < SimultaneousBLEConnections;i++) {
 		var peripheral = PeripheralList.shift();
 		if(peripheral == undefined) {
-			return;
+			break;
 		}
 		if(!isPeripheralConnected(peripheral.id)) {
 			console.log("connectPeripheral ", peripheral.id);
-			connectPeripheral(peripheral); 
+			connectPeripheral(peripheral);
+            setDisconnectHandler = 1;
 		} else {
 			console.log("Peripheral Already Connected ", peripheral.id);
 		}
 	}
+	if((config.ContinuousBLEConnection === 0) && (setDisconnectHandler === 1)) {
+        disconnectHandler = setTimeout(peripheralDisconnectHandler, BLEConnectionDuration, ConnectedPeripheralDetails);
+        disconnectHandlerCalled = 1;
+    }
 }
 
 function connectPeripheral(peripheral) {
