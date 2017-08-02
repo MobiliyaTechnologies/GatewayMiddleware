@@ -16,7 +16,8 @@ var jsonfile = require('jsonfile');
 var bus = require('../../eventbus');
 var fs = require('fs');
 
-var file = 'sensorlist.json';
+var sensorListFile = 'sensorlist.json';
+var SensorTypesFile = 'sensorTypes.json';
 
 // String containing Hostname, Device Id & Device Key in the following formats:
 //  "HostName=<iothub_host_name>;DeviceId=<device_id>;SharedAccessKey=<device_key>"
@@ -116,40 +117,80 @@ function isJSON(str) {
 
 var saveData = function(msg, status) {
 	try {
-		jsonfile.readFile(file, function(err, obj) {
-			if(obj == undefined) {
-				obj = {};
-			}
-			var message = JSON.parse(msg);
-			//console.log(message);
-			for(var sensorDetail in message) {
-				//console.log('Sensor Detail ', message[sensorDetail]);
-				if(!message[sensorDetail].hasOwnProperty('SensorKey')) {
-					console.log("Invalid JSON");
-					//return;
-				} else {
-					var key = message[sensorDetail].SensorKey;
-					//console.log('key : ' + key);
-					if(status == "Attach") {
-						obj[key] = message[sensorDetail];
-					} else {
-						if(obj.hasOwnProperty(key)){
-							console.log('sensor ' + key + ' deleted');
-							delete obj[key];
-						}
-					}	
+		if(status == "AttachSensor" || status == "DetachSensor") {
+				if (fs.existsSync(sensorListFile)) {
+					var obj = jsonfile.readFileSync(sensorListFile, "utf8");
 				}
-			}
-			console.log('writing file');
-			//console.log(JSON.stringify(obj));
-			jsonfile.writeFile(file, obj, function (err) {
-			    if(err) {
-				    console.error(err);
-			    }
-				console.log('Emit update event !');
+				if (obj == undefined || obj == null) {
+					obj = {};
+				}
+				var message = JSON.parse(msg);
+				//console.log(message);
+				for(var sensorDetail in message) {
+					//console.log('Sensor Detail ', message[sensorDetail]);
+					if(!message[sensorDetail].hasOwnProperty('SensorKey')) {
+						console.log("Invalid Sensor JSON");
+						//return;
+					} else {
+						var key = message[sensorDetail].SensorKey;
+						//console.log('key : ' + key);
+						if(status == "AttachSensor") {
+							obj[key] = message[sensorDetail];
+						} else if(status == "DetachSensor") {
+							if(obj.hasOwnProperty(key)){
+								console.log('sensor ' + key + ' deleted');
+								delete obj[key];
+							}
+						}	
+					}
+				}
+				console.log('writing file');
+				//console.log(JSON.stringify(obj));
+				jsonfile.writeFileSync(sensorListFile, obj, {"encoding":'utf8'});
+				/*	if(err) {
+						console.error(err);
+						console.log('Error updating SensorList file !');
+					}
+				*/
+				console.log('Emit update SensorList event !');
 				bus.emit('updatelist');
-			});
-		});
+		} else if(status == "AttachSensorType" || status == "DetachSensorType") {
+				if (fs.existsSync(SensorTypesFile)) {
+					var obj = jsonfile.readFileSync(SensorTypesFile, "utf8");
+				}
+				if (obj == undefined || obj == null) {
+					obj = {};
+				}
+				var message = JSON.parse(msg);
+				//console.log(message);
+				for(var sensorDetail in message) {
+					//console.log('Sensor Detail ', message[sensorDetail]);
+					if(!message[sensorDetail].hasOwnProperty('SensorType')) {
+						console.log("Invalid SensorType JSON");
+						//return;
+					} else {
+						var key = message[sensorDetail].SensorType;
+						//console.log('key : ' + key);
+						if(status == "AttachSensorType") {
+							obj[key] = message[sensorDetail];
+						} else if(status == "DetachSensorType") {
+							if(obj.hasOwnProperty(key)){
+								console.log('sensor ' + key + ' deleted');
+								delete obj[key];
+							}
+						}	
+					}
+				}
+				console.log('writing file');
+				//console.log(JSON.stringify(obj));
+				jsonfile.writeFileSync(SensorTypesFile, obj, {"encoding":'utf8'});
+				/*	if(err) {
+						console.log('Error updating SensorType file !');
+						console.error(err);
+					}*/
+				console.log('Emit update SensorType event !');
+				bus.emit('updateSensorTypes');
+		}
 	} catch (err) {
 		// handle the error safely
 		console.log(err);

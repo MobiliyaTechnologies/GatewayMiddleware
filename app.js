@@ -26,8 +26,7 @@ var getConnectionString = function() {
 		 console.log("Please Login !!");
 		 bus.emit('log',"Please Login !!");
 		 console.log("open url 'http://localhost:65159/' in browser");
-		 bus.emit('log',"open url 'http://localhost:65159/' in browser");
-	     console.log("open url 'http://localhost:65159/' in browser");
+		 bus.emit('log',"Please Login !");
 		 
 		  console.log(err);
 	  } else {
@@ -59,16 +58,16 @@ app.post('/connectionstring', function (req, res) {
 	console.log(req.body);
 	connectionString = req.body.connectionString;
 	console.log(connectionString);
-	fs.writeFile('./connectionString.txt', connectionString , 'utf-8');
+	fs.writeFileSync('./connectionString.txt', connectionString , 'utf-8');
 
 	require('./main');
   	res.sendStatus(200);
 })
 app.post('/capabilities', function (req, res) {
-	console.log(req.body);
+	//console.log(req.body);
 	capabilities = req.body.capabilities;
-	console.log(capabilities);
-	fs.writeFile('./capabilities.json', capabilities , 'utf-8');
+	//console.log(capabilities);
+	fs.writeFileSync('./capabilities.json', capabilities , 'utf-8');
 
 	//require('./main');
   	res.sendStatus(200);

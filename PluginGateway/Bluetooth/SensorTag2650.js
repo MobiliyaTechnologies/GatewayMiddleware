@@ -2,7 +2,7 @@ var bus = require('../../eventbus');
 function SensorTag2650() { };//class for sesnorTag 2650
 //var disconnectEventsSent;
 
-SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){ // sensor tag 2650 handle
+SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,SensorCapabilities,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){ // sensor tag 2650 handle
 	var disconnectEventsSent = false;
 	var AmbientTempUnit = "Celsius";
 	var ObjectTempUnit = "Celsius";
@@ -87,23 +87,23 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 				var capIdMagnetometer = -1;
 				var capIdGyroscope = -1;
 				var capIdLuxometer = -1;
-				for(var item in SensorDetails.SensorCapabilities) {
-					if(SensorDetails.SensorCapabilities[item].Name == "AmbientTemperature") {
-						capIdAmbientTemperature = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "ObjectTemperature") {
-						capIdObjectTemperature = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "Humidity"){
-						capIdHumidity = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "BarometricPressure"){
-						capIdBarometricPressure = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "Accelerometer") {
-						capIdAccelerometer = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "Magnetometer") {
-						capIdMagnetometer = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "Gyroscope") {
-						capIdGyroscope = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "Luxometer"){
-						capIdLuxometer = SensorDetails.SensorCapabilities[item].Id;
+				for(var item in SensorCapabilities) {
+					if(SensorCapabilities[item].Name == "AmbientTemperature") {
+						capIdAmbientTemperature = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "ObjectTemperature") {
+						capIdObjectTemperature = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "Humidity"){
+						capIdHumidity = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "BarometricPressure"){
+						capIdBarometricPressure = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "Accelerometer") {
+						capIdAccelerometer = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "Magnetometer") {
+						capIdMagnetometer = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "Gyroscope") {
+						capIdGyroscope = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "Luxometer"){
+						capIdLuxometer = SensorCapabilities[item].Id;
 					}
 					if(capIdAmbientTemperature != -1 && capIdObjectTemperature != -1 && capIdHumidity != -1 && capIdBarometricPressure != -1 && capIdAccelerometer != -1 && capIdMagnetometer != -1 && capIdGyroscope != -1 && capIdLuxometer != -1) {
 						break;

@@ -19,8 +19,10 @@ var GetWhiteList = require('./PluginGateway/Cloud/GetWhiteList');
 const CompatibleSensors = [];
 var DiscoveredPeripheral = [];
 var allowDuplicates = false;
+var fs = require('fs');
 var jsonfile = require('jsonfile')
 var sensorListFile = 'sensorlist.json';
+var sensorTypesFile = 'sensorTypes.json';
 var bus = require('./eventbus');
 var HandleQueueInterval;
 var List = require("collections/list");
@@ -29,6 +31,7 @@ var ConnectedPeripheralList = new List([]);
 var ConnectedPeripheralDetails = [];
 var capabilitiesFile = 'capabilities.json';
 var Capabilities;
+var SensorCapabilities;
 var SimultaneousBLEConnections = config.SimultaneousBLEConnections;
 var BLEConnectionDuration = config.BLEConnectionDuration;
 var disconnectHandler;
@@ -41,33 +44,53 @@ var myUpdateEventHandler = function () {
 	  updateSensorList();
 }
 
+var updateSensorTypesHandler = function () {
+	  updateSensorTypes();
+}
+
 function updateSensorList() {
 	console.log('Update sensor list!');
-	jsonfile.readFile(sensorListFile, function(err, obj) {
-		if (err) {
-		 console.log("Unabel to read sensorListFile !!");
-		 console.log(err);
-		  return;
-		  } 
-		  console.log("Updating list !!");	
-		  //console.log(Object.keys(obj));
-		  //console.log(obj);
-		  cb(Object.keys(obj), obj);
-	});
+	if (fs.existsSync(sensorListFile)) {
+		var fileData = jsonfile.readFileSync(sensorListFile, "utf8");
+		if (fileData == undefined || fileData == null) {
+				 console.log("Unabel to read sensorListFile !!");
+				 //console.log(err);
+		} else { 
+			  console.log("Updating list !!");	
+			  //console.log(Object.keys(obj));
+			  //console.log(obj);
+			  cb(Object.keys(fileData), fileData);
+		}
+	}
+}
+
+function updateSensorTypes() {
+	console.log('Update sensor types!');
+	if (fs.existsSync(sensorTypesFile)) {
+		var fileData = jsonfile.readFileSync(sensorTypesFile, "utf8");
+		if (fileData == undefined || fileData == null) {
+				 console.log("Unabel to read sensorTypesFile !!");
+				 //console.log(err);
+				 return;
+		} else { 
+			console.log("Updating sensor types !!");	
+			SensorCapabilities = fileData;
+		}
+	}
 }
 
 function getSensorUnit() {
-	console.log('getSensorUnit');	
-	jsonfile.readFile(capabilitiesFile, function(err, obj) {
-		if (err) {
-		 console.log("Unabel to read capabilitiesFile !!");
-		 console.log(err);
+	console.log('getSensorUnit');
+	if (fs.existsSync(capabilitiesFile)) {
+		var fileData = jsonfile.readFileSync(capabilitiesFile, "utf8");
+		if (fileData == undefined || fileData == null) {
+			 console.log("Unabel to read capabilitiesFile !!");
+			 //console.log(err);
 		} else {
-			console.log("getSensorUnit capabilities");
-			Capabilities = obj;	
-			console.log(JSON.stringify(Capabilities));
+				console.log("getSensorUnit capabilities found");
+				Capabilities = fileData;	
 		}
-	});
+	}
 }
 
 var sensorConnectedHandler = function (peripheral) {
@@ -140,10 +163,12 @@ function isPeripheralConnected(peripheralId) {
 }
 
 updateSensorList();
+updateSensorTypes();
 getSensorUnit();
 
 //Assign the event handler to an event:
 bus.on('updatelist', myUpdateEventHandler);
+bus.on('updateSensorTypes', updateSensorTypesHandler);
 bus.on('connected', sensorConnectedHandler);
 
 //function which retireves the whitelist address from the api and saves to file "whitelist.json", and updates the global variable "whitelistAddressAll,whitelistContentAll"
@@ -342,37 +367,67 @@ function connectPeripheral(peripheral) {
 						var ST_2650_DS = new SensorDataStructure();
 						//var ST_2650_CloudAdaptor = new CloudAdaptor();
 						var ST_2650_Handle = new SensorTag2650();
+						var thisSensorCapabilities = [];
+						if(SensorCapabilities != undefined) {
+							if(SensorCapabilities.hasOwnProperty(whitelistContentAll[SensorId].SensorType)) {
+								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType];
+							}
+						}
 						ST_2650_Handle.SensorTagHandle2650(peripheral,CloudAdapterInstance.AzureHandle,ST_2650_DS.JSON_data,whitelistContentAll[SensorId],
-														   Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+														   thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 					} else if (whitelistContentAll[SensorId].SensorType == "SensorTag1350"){
 						console.log(SensorId  + " is SensorTag1350");
 						var ST1350_DS = new SensorDataStructure();
 						//var ST1350_CloudAdaptor = new CloudAdaptor();
 						var ST1350_Handle = new SensorTag1350();
+						var thisSensorCapabilities = [];
+						if(SensorCapabilities != undefined) {
+							if(SensorCapabilities.hasOwnProperty(whitelistContentAll[SensorId].SensorType)) {
+								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType];
+							}
+						}
 						ST1350_Handle.SensorTagHandle1350(peripheral,CloudAdapterInstance.AzureHandle,ST1350_DS.JSON_data,whitelistContentAll[SensorId],
-														  Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+														  thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 					} else if (whitelistContentAll[SensorId].SensorType == "Bosch-XDK"){
 						console.log(SensorId  + " is Bosch-XDK");
 						var XDK_DS = new SensorDataStructure();
 						//var XDK_CloudAdaptor = new CloudAdaptor();
 						var XDK_Handle = new XDK();
+						var thisSensorCapabilities = [];
+						if(SensorCapabilities != undefined) {
+							if(SensorCapabilities.hasOwnProperty(whitelistContentAll[SensorId].SensorType)) {
+								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType];
+							}
+						}
 						XDK_Handle.XDKHandle(peripheral,CloudAdapterInstance.AzureHandle,XDK_DS.JSON_data,whitelistContentAll[SensorId],
-											 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+											 thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 					} else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-React"){
 						console.log(SensorId  + " is ThunderBoard-React");
 					//if (peripheral.id == "000b571c53ae"){ // for testing the sensor locally without whitelisting
 						var ThunderboardReact_DS = new SensorDataStructure();
 						//var ThunderboardReact_CloudAdaptor = new CloudAdaptor();
 						var ThunderboardReact_Handle = new ThunderboardReact();
+						var thisSensorCapabilities = [];
+						if(SensorCapabilities != undefined) {
+							if(SensorCapabilities.hasOwnProperty(whitelistContentAll[SensorId].SensorType)) {
+								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType];
+							}
+						}
 						ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardReact_DS.JSON_data,whitelistContentAll[SensorId],
-																		 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+																		thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 					} else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-Sense"){
 						console.log(SensorId  + " is ThunderBoard-Sense");
 						var ThunderboardSense_DS = new SensorDataStructure();
 						//var ThunderboardSense_CloudAdaptor = new CloudAdaptor();
 						var ThunderboardSense_Handle = new ThunderboardSense();
+						var thisSensorCapabilities = [];
+						if(SensorCapabilities != undefined) {
+							if(SensorCapabilities.hasOwnProperty(whitelistContentAll[SensorId].SensorType)) {
+								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType];
+							}
+						}
 						ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId],
-																		 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+																		 thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 					} else{
 						//console.log(peripheral);
 						// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found
