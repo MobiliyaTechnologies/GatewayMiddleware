@@ -1,12 +1,27 @@
 var bus = require('../../eventbus');
 function XDK () { };//class for XDK
-XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,Capabilities){// XDK handle
+
+XDKDisconnectHandler = function(peripheral,GroupId) {
+	peripheral.disconnect(function(error){
+		if (error) {
+			console.log(peripheral.uuid + " Disconnect error");
+			console.log(error);
+		} else {
+			console.log(peripheral.uuid + " Disconnected");
+		}
+		bus.emit('sensor_group_disconnected',GroupId);
+		bus.emit('log', 'Disconnected to Bosch-XDK: '	+ peripheral.uuid);
+	});
+};
+
+XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,Capabilities,BLEConnectionDuration,ContinuousBLEConnection) {// XDK handle
 	peripheral.connect(function(error) {
 		if(error) {
 			console.log("Error in connection with peripheral (Bosch-XDK): " + peripheral);
 			console.log(error);
 			return;
 		}
+		bus.emit('connected', peripheral);
 		bus.emit('sensor_group_connected',SensorDetails.GroupId);
 		process.on('SIGINT', function() {
 			var i_should_exit = true;
@@ -16,19 +31,21 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 					console.log(peripheral.uuid + " Disconnect error", error);
 				} else {
 					console.log(peripheral.uuid + " Disconnected");
-					bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
 				}
+				bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
+				bus.emit('log', 'Disconnected to Bosch-XDK: '	+ peripheral.uuid);
 			});
 			if(i_should_exit)
 					process.exit();
 		});
 		console.log('connected to periphera (Bosch-XDK)l: '	+ peripheral.uuid);
+		bus.emit('log', 'connected to Bosch-XDK: '	+ peripheral.uuid);
 		 
 		peripheral.discoverServices(null,function(error, services) {// service discovery
-			console.log('discovered the following services:');
+			/*console.log('discovered the following services:');
 			for ( var i in services) {
 				console.log('  '+ i	+ ' uuid: '	+ services[i].uuid);
-			}
+			}*/
 		});
 		peripheral.once('servicesDiscover', function(services){//on service discovery
 			var AccelerometerService = services[2];
@@ -45,6 +62,9 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 			AccelerometerService.once('characteristicsDiscover', function(characteristics){// on characteristic discover
 				var startSamplingAccelerometerData = characteristics[0];
 				var notifyServiceAccelerometerData = characteristics[1];
+				if (notifyServiceAccelerometerData == undefined || startSamplingAccelerometerData == undefined) {
+						return;
+				}
 				notifyServiceAccelerometerData.on('data', function(data,isNotification) {// notification events form acclerometer service
 					var data = data.toString('utf-8');
 					// The substituted value will be contained in the result variable
@@ -80,6 +100,12 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 				});
 			});
 		});
+	});
+	peripheral.once('disconnect', function() {
+        console.log(peripheral.uuid + " Disconnected");
+        bus.emit('disconnected', peripheral.uuid);
+        bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
+		bus.emit('log', 'Disconnected to XDK: '	+ peripheral.uuid);
 	});
 };
 module.exports = XDK;
