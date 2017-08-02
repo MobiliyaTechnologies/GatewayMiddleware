@@ -17,6 +17,11 @@ var removeGroup = function (groupId) {
 	groupList.delete(groupId);
 }
 
+var removeAllGroups = function (groupId) {
+	//console.log("Geolocation removeGroup");
+	groupList.clear();
+}
+
 function Geolocation () { };//class for SensorTag1350
 Geolocation.prototype.GeolocationHandler = function (CloudAdaptor,DataWrapper,BLEReconnectionInterval){ // sensor tag 1350 handle
 	console.log("Geolocation.Prototype.GeolocationHandler ", new Date());	
@@ -24,7 +29,12 @@ Geolocation.prototype.GeolocationHandler = function (CloudAdaptor,DataWrapper,BL
 	//Assign the event handler to an event:
 	bus.on('sensor_group_connected', addGroup);
 	bus.on('sensor_group_disconnected', removeGroup);
+	bus.on('all_sensor_group_disconnected', removeAllGroups);
 	
+	var interval = BLEReconnectionInterval;
+	if(BLEReconnectionInterval - 500 > 100) {
+		interval = BLEReconnectionInterval - 500;
+	}
 	setInterval(function() {
 		if (groupList.length > 0) {
 			console.log("Geolocation  SENT:");
@@ -33,10 +43,7 @@ Geolocation.prototype.GeolocationHandler = function (CloudAdaptor,DataWrapper,BL
 		} else {
 			//console.log("Geolocation not sent");
 		}
-	}, BLEReconnectionInterval);
-	
-	
-	
+	}, interval);
 };
 
 module.exports = Geolocation;

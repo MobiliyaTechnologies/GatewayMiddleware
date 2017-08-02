@@ -42,10 +42,10 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 		bus.emit('log', 'connected to Bosch-XDK: '	+ peripheral.uuid);
 		 
 		peripheral.discoverServices(null,function(error, services) {// service discovery
-			console.log('discovered the following services:');
+			/*console.log('discovered the following services:');
 			for ( var i in services) {
 				console.log('  '+ i	+ ' uuid: '	+ services[i].uuid);
-			}
+			}*/
 		});
 		peripheral.once('servicesDiscover', function(services){//on service discovery
 			var AccelerometerService = services[2];

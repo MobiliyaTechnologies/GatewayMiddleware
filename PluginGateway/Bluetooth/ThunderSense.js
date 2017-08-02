@@ -91,9 +91,9 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 
 		peripheral.discoverServices([],function(error, services) {
 			//console.log('discovered the following services:',services);
-			for ( var i in services) {
+			/*for ( var i in services) {
 				console.log('  '+ i	+ ' uuid: '	+ services[i].uuid);
-			}
+			}*/
 			//console.log('discovered the following characteristics:',characteristics);
 		});
 

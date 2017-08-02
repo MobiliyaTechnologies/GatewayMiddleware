@@ -33,6 +33,8 @@ var SimultaneousBLEConnections = config.SimultaneousBLEConnections;
 var BLEConnectionDuration = config.BLEConnectionDuration;
 var disconnectHandler;
 var disconnectHandlerCalled = 0;
+var IsBluetoothPoweredOn = true;
+var startScanningIntervalFunction;
 
 //Create an event handler:
 var myUpdateEventHandler = function () {
@@ -85,14 +87,20 @@ var sensorConnectedHandler = function (peripheral) {
 var peripheralDisconnectHandler = function() {
     for (var i = 0;i < ConnectedPeripheralDetails.length;i++) {
         var peripheral = ConnectedPeripheralDetails[i];
-        console.log(peripheral.uuid + " Disconnect handler");
+        console.log(peripheral.uuid + " Disconnect handler MAIN");
         ConnectedPeripheralDetails[i].disconnect(function(error) {
     	    if(error) {
-	    	    console.log(this.uuid + " Disconnect error");
+	    	    console.log(this.uuid + " Disconnect error MAIN");
 		        console.log(error);
 		    } else {
-			    console.log(this.uuid + " Disconnect handler");
+			    console.log(this.uuid + " Disconnect handler MAIN");
 		    }
+			/*
+			console.log("Emit Events");
+			bus.emit('disconnected', peripheral.uuid);
+			bus.emit('sensor_group_disconnected',GroupId);
+			bus.emit('log', 'Disconnected to SensorTag2650: '	+ peripheral.uuid);
+			*/
         });
     }
 
@@ -146,31 +154,60 @@ function cb(whitelistaddresses,whitelistContent){
 	whitelistContentAll = whitelistContent;
 }
 
-//BLE APP is the main app which start the BLE thread
-function BLEApp (){
-	/*
-	noble.on('stateChange', function(state) {
-		if (state === 'poweredOn') {
-		console.log("Adaptor State Changed to :", state);
-		//noble.startScanning(allowDuplicates);
-		setTimeout( function() { noble.startScanning()},2000);
-				console.log("started scanning for ble sevices with following whitelisted address :",whitelistAddressAll);
-		} else {
-			noble.stopScanning();
-		}
-		
-	});
-	*/
-	
+function startScanning() {
 	//start scanning for ble services
 	try {
+		noble.on('stateChange', function(state) {
+			console.log("onStateChange to ", state);
+			bus.emit('log',"Bluetooth state changed to " + state);
+			if (state === 'poweredOn') {
+				IsBluetoothPoweredOn = true;
+				//noble.startScanning(allowDuplicates);
+				setTimeout( function() { 
+					console.log("onStateChange startScanning");
+					bus.emit('log',"Start Scanning on Bluetooth ON");
+					noble.startScanning(null,allowDuplicates);
+					//BLEApp();
+				}, 2000);
+				console.log("onStateChange started scanning for BLE Devices");
+			
+				if (config.ContinuousBLEConnection === 0) {
+					console.log("onStateChange HandleQueueInterval");
+					HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
+				}
+			} else {
+				IsBluetoothPoweredOn = false;
+			//	console.log("onStateChange stopScanning");
+			//	noble.stopScanning();
+				console.log("onStateChange clear HandleQueueInterval");
+				bus.emit('all_sensor_group_disconnected');
+				clearInterval(HandleQueueInterval);
+			
+			}	
+			
+		});
+		BLEApp();
+		
+		console.log("startScanning - started scanning for BLE Devices");
 		noble.startScanning(null,allowDuplicates);
+
+		if (config.ContinuousBLEConnection === 0) {
+			console.log("startScanning - HandleQueueInterval");
+			HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
+		}
 	} catch(error) {
 		console.log("Error in start Scanning");
 		console.log(error);
+		IsBluetoothPoweredOn = false;
+		console.log("BLEApp clear HandleQueueInterval");
+		clearInterval(HandleQueueInterval);
 		return;
 	}
-	console.log("ScanningStarted");
+}
+
+//BLE APP is the main app which start the BLE thread
+function BLEApp () {
+	console.log("BLEApp ScanningStarted");
 	bus.emit('log',"ScanningStarted");
 	//callback when BLE scan discovers a new ble device, return a peripheral object
 	noble.on('discover',function(peripheral) { 
@@ -248,13 +285,19 @@ function BLEApp (){
 		//clearPeripheralList
 		PeripheralList.clear();
 		
-            console.log("Scanning to start soon");
-		    setTimeout(function(){
-			    noble.startScanning(null,allowDuplicates);
-			    console.log("ScanningStarted");
-			    bus.emit('log',"ScanningStarted");
-		    //}, config.BLEReconnectionInterval);
-		    }, 1000);
+        console.log("Scanning to start soon in " + config.BLEReconnectionInterval + " ms");
+		if(IsBluetoothPoweredOn) {
+			clearTimeout(startScanningIntervalFunction);
+		    startScanningIntervalFunction = setTimeout(function() {
+				if(IsBluetoothPoweredOn) {
+					noble.startScanning(null,allowDuplicates);
+					console.log("ScanningStopped => ScanningStarted");
+					bus.emit('log',"ScanningStarted");
+				}
+			}, config.BLEReconnectionInterval);
+			//}, 1000);
+			
+		}
 	});
 
 };
@@ -292,44 +335,51 @@ function connectPeripheral(peripheral) {
 				var SensorId = peripheral.id.toLowerCase();
 				if(whitelistContentAll[SensorId] == undefined) {
 					return;
+				} else {
+					console.log(SensorId  + " is whitelisted");
+					if (whitelistContentAll[SensorId].SensorType == "SensorTag2650"){
+						console.log(SensorId  + " is SensorTag2650");
+						var ST_2650_DS = new SensorDataStructure();
+						//var ST_2650_CloudAdaptor = new CloudAdaptor();
+						var ST_2650_Handle = new SensorTag2650();
+						ST_2650_Handle.SensorTagHandle2650(peripheral,CloudAdapterInstance.AzureHandle,ST_2650_DS.JSON_data,whitelistContentAll[SensorId],
+														   Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+					} else if (whitelistContentAll[SensorId].SensorType == "SensorTag1350"){
+						console.log(SensorId  + " is SensorTag1350");
+						var ST1350_DS = new SensorDataStructure();
+						//var ST1350_CloudAdaptor = new CloudAdaptor();
+						var ST1350_Handle = new SensorTag1350();
+						ST1350_Handle.SensorTagHandle1350(peripheral,CloudAdapterInstance.AzureHandle,ST1350_DS.JSON_data,whitelistContentAll[SensorId],
+														  Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+					} else if (whitelistContentAll[SensorId].SensorType == "Bosch-XDK"){
+						console.log(SensorId  + " is Bosch-XDK");
+						var XDK_DS = new SensorDataStructure();
+						//var XDK_CloudAdaptor = new CloudAdaptor();
+						var XDK_Handle = new XDK();
+						XDK_Handle.XDKHandle(peripheral,CloudAdapterInstance.AzureHandle,XDK_DS.JSON_data,whitelistContentAll[SensorId],
+											 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+					} else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-React"){
+						console.log(SensorId  + " is ThunderBoard-React");
+					//if (peripheral.id == "000b571c53ae"){ // for testing the sensor locally without whitelisting
+						var ThunderboardReact_DS = new SensorDataStructure();
+						//var ThunderboardReact_CloudAdaptor = new CloudAdaptor();
+						var ThunderboardReact_Handle = new ThunderboardReact();
+						ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardReact_DS.JSON_data,whitelistContentAll[SensorId],
+																		 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+					} else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-Sense"){
+						console.log(SensorId  + " is ThunderBoard-Sense");
+						var ThunderboardSense_DS = new SensorDataStructure();
+						//var ThunderboardSense_CloudAdaptor = new CloudAdaptor();
+						var ThunderboardSense_Handle = new ThunderboardSense();
+						ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId],
+																		 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+					} else{
+						//console.log(peripheral);
+						// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found
+						console.log('No compatible library for this sensor: ', peripheral.advertisement.localName,peripheral.id);
+						bus.emit('log','No compatible library for this sensor: ' + peripheral.id);
+					}
 				}
-				if (whitelistContentAll[SensorId].SensorType == "SensorTag2650"){
-					var ST_2650_DS = new SensorDataStructure();
-					//var ST_2650_CloudAdaptor = new CloudAdaptor();
-					var ST_2650_Handle = new SensorTag2650();
-					ST_2650_Handle.SensorTagHandle2650(peripheral,CloudAdapterInstance.AzureHandle,ST_2650_DS.JSON_data,whitelistContentAll[SensorId],
-													   Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-				}else if (whitelistContentAll[SensorId].SensorType == "SensorTag1350"){
-					var ST1350_DS = new SensorDataStructure();
-					//var ST1350_CloudAdaptor = new CloudAdaptor();
-					var ST1350_Handle = new SensorTag1350();
-					ST1350_Handle.SensorTagHandle1350(peripheral,CloudAdapterInstance.AzureHandle,ST1350_DS.JSON_data,whitelistContentAll[SensorId],
-													  Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-				}else if (whitelistContentAll[SensorId].SensorType == "Bosch-XDK"){
-					var XDK_DS = new SensorDataStructure();
-					//var XDK_CloudAdaptor = new CloudAdaptor();
-					var XDK_Handle = new XDK();
-					XDK_Handle.XDKHandle(peripheral,CloudAdapterInstance.AzureHandle,XDK_DS.JSON_data,whitelistContentAll[SensorId],
-										 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-				}else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-React"){
-				//if (peripheral.id == "000b571c53ae"){ // for testing the sensor locally without whitelisting
-					var ThunderboardReact_DS = new SensorDataStructure();
-					//var ThunderboardReact_CloudAdaptor = new CloudAdaptor();
-					var ThunderboardReact_Handle = new ThunderboardReact();
-					ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardReact_DS.JSON_data,whitelistContentAll[SensorId],
-																	 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-				}else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-Sense"){
-					var ThunderboardSense_DS = new SensorDataStructure();
-					//var ThunderboardSense_CloudAdaptor = new CloudAdaptor();
-					var ThunderboardSense_Handle = new ThunderboardSense();
-					ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId],
-																	 Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-				}else{
-					//console.log(peripheral);
-					// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found
-					console.log('No compatible library for this sensor: ', peripheral.advertisement.localName,peripheral.id);
-					bus.emit('log','No compatible library for this sensor: ' + peripheral.id);
-				}	
 		} else {
 			console.log("peripheral undifined");
 		}
@@ -361,10 +411,6 @@ Geolocation_Handle.GeolocationHandler(Geolocation_CloudAdaptor.AzureHandle,Geolo
 CloudAdapterInstance.AzureInit(function (){
 	// start the local protocol app
 	CloudLed("1");//Power on the cloud led as the cloud init is now successful
-	BLEApp();
-
+	//BLEApp();
+	startScanning();
 });
-
-if (config.ContinuousBLEConnection === 0) {
-	HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
-}

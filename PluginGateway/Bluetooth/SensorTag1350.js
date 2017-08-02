@@ -42,11 +42,15 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 		});
 		
 		peripheral.discoverServices(null,function(error, services) { // service discovery
-			console.log('discovered the following services:');
-			for ( var i in services) {
-				console.log('  '+ i	+ ' uuid: '	+ services[i].uuid);
+			if(error) {
+				console.log('Error in discoverServices');
+				console.log(error);
+			} else {
+				/*console.log('discovered the following services:');
+				for ( var i in services) {
+					console.log('  '+ i	+ ' uuid: '	+ services[i].uuid);
+				}*/
 			}
-			
 		});
 		peripheral.once('servicesDiscover', function(services) { //on service discovery
 			try {
