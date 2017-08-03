@@ -14,7 +14,7 @@ XDKDisconnectHandler = function(peripheral,GroupId) {
 	});
 };
 
-XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,Capabilities,BLEConnectionDuration,ContinuousBLEConnection) {// XDK handle
+XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,SensorCapabilities,Capabilities,BLEConnectionDuration,ContinuousBLEConnection) {// XDK handle
 	peripheral.connect(function(error) {
 		if(error) {
 			console.log("Error in connection with peripheral (Bosch-XDK): " + peripheral);
@@ -71,9 +71,9 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 					var zValue = (data.split(' ')[2]).replace(/\0[\s\S]*$/g,'');// regular expression for handling the z value
 					
 					var capId = 0;
-					for(var item in SensorDetails.SensorCapabilities) {
-						if(SensorDetails.SensorCapabilities[item].Name == "Accelerometer") {
-							capId = SensorDetails.SensorCapabilities[item].Id;
+					for(var item in SensorCapabilities) {
+						if(SensorCapabilities[item].Name == "Accelerometer") {
+							capId = SensorCapabilities[item].Id;
 						}
 					}
 					//GroupId:SensorDetails.GroupId,

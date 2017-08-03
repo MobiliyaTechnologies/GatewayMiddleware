@@ -52,7 +52,7 @@ function readAmbientLight(CloudAdaptor,DataWrapper,AmbientLight,SensorDetails,ca
 	}
 };
 
-ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){
+ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,SensorCapabilities,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){
 	var AmbientTempUnit = "Celsius";
 	if (Capabilities != undefined) {
 		Capabilities.forEach(function(elem, index) {
@@ -90,19 +90,19 @@ ThunderboardReact.prototype.ThunderboardReactHandle= function (peripheral,CloudA
 				var capIdTemperature = -1;
 				var capIdUVIndex = -1;
 
-				for(var item in SensorDetails.SensorCapabilities) {
-					if(SensorDetails.SensorCapabilities[item].Name == "Accelerometer") {
-						capIdAccelerometer = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "Gyroscope") {
-						capIdGyroscope = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "Luxometer"){
-						capIdAmbientLight = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "Humidity"){
-						capIdHumidity = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "AmbientTemperature"){
-						capIdTemperature = SensorDetails.SensorCapabilities[item].Id;
-					} else if(SensorDetails.SensorCapabilities[item].Name == "UVIndex"){
-						capIdUVIndex = SensorDetails.SensorCapabilities[item].Id;
+				for(var item in SensorCapabilities) {
+					if(SensorCapabilities[item].Name == "Accelerometer") {
+						capIdAccelerometer = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "Gyroscope") {
+						capIdGyroscope = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "Luxometer"){
+						capIdAmbientLight = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "Humidity"){
+						capIdHumidity = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "AmbientTemperature"){
+						capIdTemperature = SensorCapabilities[item].Id;
+					} else if(SensorCapabilities[item].Name == "UVIndex"){
+						capIdUVIndex = SensorCapabilities[item].Id;
 					}
 					if(capIdAccelerometer != -1 && capIdGyroscope != -1 && capIdAmbientLight != -1 && capIdHumidity != -1 && capIdTemperature != -1 && capIdUVIndex != -1) {
 						break;
