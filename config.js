@@ -11,6 +11,6 @@ Longitude:73.7917362,
 ContinuousBLEConnection:0,	//0: Connect at intervals, 1: Continuous connection
 SimultaneousBLEConnections:4,
 BLEConnectionDuration:3500,
-BLEReconnectionInterval:4500
+BLEReconnectionInterval:5000
 };
 module.exports = config;

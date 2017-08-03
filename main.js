@@ -75,6 +75,7 @@ function updateSensorTypes() {
 		} else { 
 			console.log("Updating sensor types !!");	
 			SensorCapabilities = fileData;
+			//console.log(JSON.stringify(SensorCapabilities));
 		}
 	}
 }
@@ -259,7 +260,7 @@ function BLEApp () {
 						//console.log("List items: ", element.id);
 						if(element.id == peripheral.id) {
 							found = true;
-							return;
+							return;SensorCapabilities
 						}
 				});
 				if (!found) {
@@ -370,7 +371,8 @@ function connectPeripheral(peripheral) {
 						var thisSensorCapabilities = [];
 						if(SensorCapabilities != undefined) {
 							if(SensorCapabilities.hasOwnProperty(whitelistContentAll[SensorId].SensorType)) {
-								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType];
+								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType].SensorCapabilities;
+								//console.log("thisSensorCapabilities: " + JSON.stringify(thisSensorCapabilities));
 							}
 						}
 						ST_2650_Handle.SensorTagHandle2650(peripheral,CloudAdapterInstance.AzureHandle,ST_2650_DS.JSON_data,whitelistContentAll[SensorId],
@@ -383,7 +385,7 @@ function connectPeripheral(peripheral) {
 						var thisSensorCapabilities = [];
 						if(SensorCapabilities != undefined) {
 							if(SensorCapabilities.hasOwnProperty(whitelistContentAll[SensorId].SensorType)) {
-								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType];
+								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType].SensorCapabilities;
 							}
 						}
 						ST1350_Handle.SensorTagHandle1350(peripheral,CloudAdapterInstance.AzureHandle,ST1350_DS.JSON_data,whitelistContentAll[SensorId],
@@ -396,7 +398,7 @@ function connectPeripheral(peripheral) {
 						var thisSensorCapabilities = [];
 						if(SensorCapabilities != undefined) {
 							if(SensorCapabilities.hasOwnProperty(whitelistContentAll[SensorId].SensorType)) {
-								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType];
+								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType].SensorCapabilities;
 							}
 						}
 						XDK_Handle.XDKHandle(peripheral,CloudAdapterInstance.AzureHandle,XDK_DS.JSON_data,whitelistContentAll[SensorId],
@@ -410,7 +412,7 @@ function connectPeripheral(peripheral) {
 						var thisSensorCapabilities = [];
 						if(SensorCapabilities != undefined) {
 							if(SensorCapabilities.hasOwnProperty(whitelistContentAll[SensorId].SensorType)) {
-								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType];
+								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType].SensorCapabilities;
 							}
 						}
 						ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardReact_DS.JSON_data,whitelistContentAll[SensorId],
@@ -423,7 +425,7 @@ function connectPeripheral(peripheral) {
 						var thisSensorCapabilities = [];
 						if(SensorCapabilities != undefined) {
 							if(SensorCapabilities.hasOwnProperty(whitelistContentAll[SensorId].SensorType)) {
-								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType];
+								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType].SensorCapabilities;
 							}
 						}
 						ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId],
