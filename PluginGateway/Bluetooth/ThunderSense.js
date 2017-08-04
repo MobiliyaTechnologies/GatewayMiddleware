@@ -89,6 +89,25 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 		console.log('connected to peripheral (ThunderBoard-Sense): '	+ peripheral.uuid);
 		bus.emit('log', 'connected to ThunderBoard-Sense: '	+ peripheral.uuid);
 
+		peripheral.updateRssi(function(error, rssi){
+			console.log("update RSSI");
+			if(error) {
+				console.log("updateRSSI error");
+				console.log(error);
+			}
+		});
+
+		peripheral.once('rssiUpdate', function(rssi) {
+			console.log("once RSSIUpdate");
+			if(rssi == undefined) {
+				return;
+			}
+			console.log("RSSI  SENT : ", rssi );
+			var json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+													 AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi};
+			CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+		});
+
 		peripheral.discoverServices([],function(error, services) {
 			//console.log('discovered the following services:',services);
 			/*for ( var i in services) {

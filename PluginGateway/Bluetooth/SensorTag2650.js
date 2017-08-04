@@ -1,6 +1,5 @@
 var bus = require('../../eventbus');
 function SensorTag2650() { };//class for sesnorTag 2650
-//var disconnectEventsSent;
 
 SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,SensorCapabilities,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){ // sensor tag 2650 handle
 	var disconnectEventsSent = false;
@@ -50,17 +49,24 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 				process.exit();
 			}
 		});
-		
-		peripheral.once('disconnect', function() {
-			console.log("Once disconnect");
-			console.log(peripheral.uuid + " once Disconnected");
-			if(!disconnectEventsSent) {
-				console.log("Emit Events");
-				bus.emit('disconnected', peripheral.uuid);
-				bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
-				bus.emit('log', 'Disconnected to SensorTag2650: '	+ peripheral.uuid);
-				disconnectEventsSent = true;
+
+		peripheral.updateRssi(function(error, rssi){
+			console.log("update RSSI");
+			if(error) {
+				console.log("updateRSSI error");
+				console.log(error);
 			}
+		});
+
+		peripheral.once('rssiUpdate', function(rssi) {
+			console.log("once RSSIUpdate");
+			if(rssi == undefined) {
+				return;
+			}
+			console.log("RSSI  SENT : ", rssi );
+			var json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+													 AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi};
+			CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 		});
 		
 		console.log('discoverServices for '	+ peripheral.uuid);
@@ -76,6 +82,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			}
 			
 		});
+		
 		peripheral.once('servicesDiscover', function(services) { //on service discovery
 			console.log('servicesDiscovered for '	+ peripheral.uuid);
 			try {
@@ -352,6 +359,19 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 				console.log(error);
 			}
 		});
+		
+		peripheral.once('disconnect', function() {
+			console.log("Once disconnect");
+			console.log(peripheral.uuid + " once Disconnected");
+			if(!disconnectEventsSent) {
+				console.log("Emit Events");
+				bus.emit('disconnected', peripheral.uuid);
+				bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
+				bus.emit('log', 'Disconnected to SensorTag2650: '	+ peripheral.uuid);
+				disconnectEventsSent = true;
+			}
+		});
+
 	});
 };
 

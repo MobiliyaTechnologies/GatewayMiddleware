@@ -40,6 +40,26 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 		});
 		console.log('connected to periphera (Bosch-XDK)l: '	+ peripheral.uuid);
 		bus.emit('log', 'connected to Bosch-XDK: '	+ peripheral.uuid);
+
+		peripheral.updateRssi(function(error, rssi){
+			console.log("update RSSI");
+			if(error) {
+				console.log("updateRSSI error");
+				console.log(error);
+			}
+		});
+
+		peripheral.once('rssiUpdate', function(rssi) {
+			console.log("once RSSIUpdate");
+			if(rssi == undefined) {
+				return;
+			}
+			console.log("RSSI  SENT : ", rssi );
+			var json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+													 AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi};
+			CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+		});
+		
 		 
 		peripheral.discoverServices(null,function(error, services) {// service discovery
 			/*console.log('discovered the following services:');
@@ -101,6 +121,8 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 			});
 		});
 	});
+		
+	
 	peripheral.once('disconnect', function() {
         console.log(peripheral.uuid + " Disconnected");
         bus.emit('disconnected', peripheral.uuid);
