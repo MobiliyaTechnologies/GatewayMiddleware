@@ -7,20 +7,20 @@
 	   <script src="ng-websocket.js"></script>
    </head>
    
-   <body>
-      <h2>Asset Monitoring Configuration</h2>
-	
+   <body>	
 	   
-      <div ng-app = "gatewayApp" ng-controller = "mainController">
+      <div style="margin-left:20px;" ng-app = "gatewayApp" ng-controller = "mainController">
+		<h2>Asset Monitoring Configuration</h2>
+
 		  
 		     <h4>Gateway: {{gatewayMac}}</h4>
-         Enter Rest Server Url: <input type = "text" ng-model = "config.restServer"><br><br>
-         Enter B2c Application Id: <input type = "text" ng-model = "config.b2cApplicationId"><br>
+         Enter Rest Server Url: <input style="width:450px" type = "text" ng-model = "config.restServer"><br><br>
+       <!--  Enter B2c Application Id: <input type = "text" ng-model = "config.b2cApplicationId"><br>
 		 Enter B2c Tenant Name: <input type = "text" ng-model = "config.tenantName"><br>
 		 Enter B2c Sign In Policy: <input type = "text" ng-model = "config.signInPolicyName"><br>
-		  
-		  <div style="margin:20px;">
-			  <button ng-click = "submit('click')" >Submit</button>
+		  -->
+		  <div style="margin-top:10px;margin-bottom:20px;width=50" >
+			  <button style="height:30px;width:150px" ng-click = "submit('click')" >Submit</button>
 		 	  <div ng-show="loader.loading"  >Signing in... Please wait.</div>
 		  </div>
 		 <br>
@@ -187,18 +187,20 @@
 			 
 			  $scope.loader.loading = true;
 				localStorage.setItem("restServer", $scope.config.restServer);
-                localStorage.setItem("b2cApplicationId", $scope.config.b2cApplicationId);
-                localStorage.setItem("tenantName", $scope.config.tenantName);
-                localStorage.setItem("signInPolicyName", $scope.config.signInPolicyName);
+                //localStorage.setItem("b2cApplicationId", $scope.config.b2cApplicationId);
+                //localStorage.setItem("tenantName", $scope.config.tenantName);
+                //localStorage.setItem("signInPolicyName", $scope.config.signInPolicyName);
                 localStorage.setItem("signInSignUpPolicyName", $scope.config.signInSignUpPolicyName);
 				localStorage.setItem("redirect_uri", 'http://localhost:65159/redirect.html');
 				
-				var script = document.createElement('script');
+				$scope.getLoginDetails(state);
+				
+				/*var script = document.createElement('script');
                 script.setAttribute('type', 'text/javascript');
                 script.setAttribute('src', './aadb2c.js');
                 document.head.appendChild(script);
 				$scope.aadLogin(state);
-			
+				*/
 		   }
 		   $scope.getConnectionStr=function(mac){
 				//mac='"f4:8e:38:d0:80:c8"';
@@ -303,15 +305,55 @@
                     }).then(function (response) {
                        
 						$scope.getConnectionStr(response.data);
-				  		setTimeout(function(){
+				  		/*setTimeout(function(){
 							$scope.getConnectionStr(response.data);
 						},3000);
-						
+						*/
                     })
                         .catch(function (error) {
                             
                         });
 
+			}
+			
+			$scope.getLoginDetails=function(state){
+			
+				url=$scope.config.restServer;
+				console.log("url :: " + url);
+				if(url == undefined || url == null || url =="") {
+					alert("Please enter valid server url.");
+					return;
+				}
+				
+			    console.log("RestServer URL ::",url);			   
+			    $http({
+                        url: 'http://assetmonitoring.azurewebsites.net/api/GetB2cConfiguration',
+                        dataType: 'json',
+                        method: 'GET'
+                    }).then(function (response) {
+                        console.log("Login Details :: ", response);
+						//$scope.saveCapabilityUnits(response.data.Capabilities);
+						console.log("response.data.B2cClientId " + response.data.B2cClientId);
+						console.log("response.data.B2cTenant " + response.data.B2cTenant);
+						console.log("response.data.B2cSignUpInPolicyId " + response.data.B2cSignUpInPolicyId);
+						localStorage.setItem("b2cApplicationId", response.data.B2cClientId);
+						localStorage.setItem("tenantName", response.data.B2cTenant);
+						localStorage.setItem("signInPolicyName", response.data.B2cSignUpInPolicyId);
+						
+						/*$scope.config.restServer=localStorage.getItem("restServer");
+						$scope.config.b2cApplicationId=localStorage.getItem("b2cApplicationId");
+						$scope.config.tenantName=localStorage.getItem("tenantName");
+						$scope.config.signInPolicyName=localStorage.getItem("signInPolicyName");
+						*/
+						var script = document.createElement('script');
+						script.setAttribute('type', 'text/javascript');
+						script.setAttribute('src', './aadb2c.js');
+						document.head.appendChild(script);
+						$scope.aadLogin(state);
+					
+                    }).catch(function (error) {
+                            console.log("Login Details API Error :: ",error);
+                    });
 			}
 			
 			$scope.showMacAddr=function(){
@@ -336,27 +378,29 @@
 
 			}
 			$scope.aadLogin=function(state){
-			aadService.signIn($scope.config,function (b2cSession) {
-                if (!online(b2cSession) && state == 'click') {
-                    aadService.policyLogin(helloNetwork.adB2CSignIn, loginDisplayType.Page);
-                }
-                else if (online(b2cSession) && state == 'intial') {
-                    //getUserDetails();
-					console.log("Heree");
-					$scope.getMacAddr();
-                }
+			
+				aadService.signIn($scope.config,function (b2cSession) {
+					if (!online(b2cSession) && state == 'click') {
+						aadService.policyLogin(helloNetwork.adB2CSignIn, loginDisplayType.Page);
+					}
+					else if (online(b2cSession)) {
+						//getUserDetails();
+						console.log("Heree");
+						$scope.getMacAddr();
+					}
 				});      
 			}
 			
 			
 			$scope.getConfig=function(){
+			
 				$scope.config.restServer=localStorage.getItem("restServer");
                 $scope.config.b2cApplicationId=localStorage.getItem("b2cApplicationId");
                 $scope.config.tenantName=localStorage.getItem("tenantName");
                 $scope.config.signInPolicyName=localStorage.getItem("signInPolicyName");
-                if($scope.config.restServer){
+                /*if($scope.config.restServer){
 					$scope.aadLogin('intial');
-				}
+				}*/
 			
 			}
 			
@@ -366,7 +410,7 @@
 			 
 			 
 			     var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
-$scope.data='';
+		$scope.data='Initializing Asset Tracking & Monitoring\n';
         ws.$on('$open', function () {
             console.log('Oh my gosh, websocket is really open!  awesome!');
 			

@@ -24,7 +24,7 @@ var BrowserWindow = electron.BrowserWindow;
 var mainWindow = null;
 app1.commandLine.appendSwitch("ignore-certificate-errors");
 app1.on('ready', function() {    
-	mainWindow = new BrowserWindow({ width: 800, height: 600,
+	mainWindow = new BrowserWindow({ width: 700, height: 650,
 					  show: true,
                       webPreferences: {
 	                      nodeIntegration: false,
@@ -32,9 +32,10 @@ app1.on('ready', function() {
                       }
 		}
 	);
-	mainWindow.openDevTools();
+	//mainWindow.openDevTools();
 	mainWindow.loadURL('http://localhost:65159/');
 });
+app1.on('window-all-closed', app1.quit);
 
 
 require('./ws_server');

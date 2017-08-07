@@ -204,7 +204,9 @@ function startScanning() {
 			} else {
 				IsBluetoothPoweredOn = false;
 			//	console.log("onStateChange stopScanning");
-			//	noble.stopScanning();
+				
+				noble.stopScanning();	//Win
+				
 				console.log("onStateChange clear HandleQueueInterval");
 				bus.emit('all_sensor_group_disconnected');
 				clearInterval(HandleQueueInterval);
@@ -355,6 +357,7 @@ function HandleQueue() {
 }
 
 function connectPeripheral(peripheral) {
+	noble.stopScanning();	//Win
 	if	(peripheral != undefined) {
 			console.log("List POP: ", peripheral.id);
 				//bus.emit('log',"Whitelisted device found: " + peripheral.id);
@@ -471,3 +474,4 @@ CloudAdapterInstance.AzureInit(function (){
 	//BLEApp();
 	startScanning();
 });
+
