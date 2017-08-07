@@ -224,6 +224,7 @@ function startScanning() {
 			HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
 		}
 	} catch(error) {
+		bus.emit('log',"Please enable bluetooth and Try Again !");
 		console.log("Error in start Scanning");
 		console.log(error);
 		IsBluetoothPoweredOn = false;
