@@ -1,8 +1,24 @@
 var bus = require('../../eventbus');
 function SensorTag1350 () { };//class for SensorTag1350
+var disconnectHandler;
+
+SensorTag1350DisconnectHandler = function(peripheral,GroupId) {
+	console.log("Called SensorTag1350 DisconnectHandler" );
+	peripheral.disconnect(function(error){
+		if (error) {
+			console.log(peripheral.uuid + " Disconnect error");
+			console.log(error);
+		}
+	});
+};
 
 SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,SensorCapabilities,Capabilities,BLEConnectionDuration,ContinuousBLEConnection) { // sensor tag 1350 handle
 	var disconnectEventsSent = false;
+	
+	if(ContinuousBLEConnection===0) {
+		console.log("SetTiomout  for DisconnectHandler");
+		disconnectHandler = setTimeout(SensorTag1350DisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
+	}
 	var AmbientTempUnit = "Celsius";
 	var ObjectTempUnit = "Celsius";
 	
@@ -41,6 +57,10 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 					console.log(peripheral.uuid + " Disconnect error", error);
 				} else {
 					console.log(peripheral.uuid + " Disconnected");
+				}
+				
+				if(ContinuousBLEConnection===0){
+					clearTimeout(disconnectHandler);
 				}
 				
 			});
@@ -352,7 +372,10 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 				bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
 				bus.emit('log', 'Disconnected to SensorTag1350: '	+ peripheral.uuid);
 				disconnectEventsSent = true;
-			}
+		}
+		if(ContinuousBLEConnection===0){
+			clearTimeout(disconnectHandler);
+		}
 	});
 
 };

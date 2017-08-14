@@ -37,6 +37,7 @@ var BLEConnectionDuration = config.BLEConnectionDuration;
 var disconnectHandler;
 var disconnectHandlerCalled = 0;
 var IsBluetoothPoweredOn = true;
+var IsAzureClientConnected = false;
 var startScanningIntervalFunction;
 
 //Create an event handler:
@@ -46,6 +47,24 @@ var myUpdateEventHandler = function () {
 
 var updateSensorTypesHandler = function () {
 	  updateSensorTypes();
+}
+
+var azureClientDisconnected = function () {
+	IsAzureClientConnected = false;
+	console.log("Stop scanning and try to reconnect azure client");
+	stopScanning();
+	setTimeout(startAzureClient, 60000);
+}
+
+var startAzureClient = function initAzureClinet() {
+	// call the particular cloud init process
+	CloudAdapterInstance.AzureInit(function (){
+		IsAzureClientConnected = true;
+		// start the local protocol app
+		CloudLed("1");//Power on the cloud led as the cloud init is now successful
+		//BLEApp();
+		startScanning();
+	});
 }
 
 function updateSensorList() {
@@ -171,6 +190,7 @@ getSensorUnit();
 bus.on('updatelist', myUpdateEventHandler);
 bus.on('updateSensorTypes', updateSensorTypesHandler);
 bus.on('connected', sensorConnectedHandler);
+bus.on('azureClientDisconnected', azureClientDisconnected);
 
 //function which retireves the whitelist address from the api and saves to file "whitelist.json", and updates the global variable "whitelistAddressAll,whitelistContentAll"
 //cb is the callback function after the getwhitelist for updating the global variables
@@ -178,6 +198,13 @@ function cb(whitelistaddresses,whitelistContent){
 	console.log("Following whitelisted addresses found :",whitelistaddresses);
 	whitelistAddressAll = whitelistaddresses;
 	whitelistContentAll = whitelistContent;
+}
+
+function stopScanning() {
+	noble.stopScanning();	//Win	
+	console.log("onStateChange clear HandleQueueInterval");
+	bus.emit('all_sensor_group_disconnected');
+	clearInterval(HandleQueueInterval);
 }
 
 function startScanning() {
@@ -203,13 +230,8 @@ function startScanning() {
 				}
 			} else {
 				IsBluetoothPoweredOn = false;
-			//	console.log("onStateChange stopScanning");
-				
-				noble.stopScanning();	//Win
-				
-				console.log("onStateChange clear HandleQueueInterval");
-				bus.emit('all_sensor_group_disconnected');
-				clearInterval(HandleQueueInterval);
+				//console.log("onStateChange stopScanning");
+				stopScanning();
 			
 			}	
 			
@@ -224,6 +246,7 @@ function startScanning() {
 			HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
 		}
 	} catch(error) {
+		console.log("Please enable bluetooth and Try Again !");
 		bus.emit('log',"Please enable bluetooth and Try Again !");
 		console.log("Error in start Scanning");
 		console.log(error);
@@ -315,7 +338,7 @@ function BLEApp () {
 		PeripheralList.clear();
 		
         console.log("Scanning to start soon in " + config.BLEReconnectionInterval + " ms");
-		if(IsBluetoothPoweredOn) {
+		if(IsBluetoothPoweredOn && IsAzureClientConnected) {
 			clearTimeout(startScanningIntervalFunction);
 		    startScanningIntervalFunction = setTimeout(function() {
 				if(IsBluetoothPoweredOn) {
@@ -325,7 +348,6 @@ function BLEApp () {
 				}
 			}, config.BLEReconnectionInterval);
 			//}, 1000);
-			
 		}
 	});
 
@@ -468,11 +490,5 @@ var Geolocation_CloudAdaptor = new CloudAdaptor();
 var Geolocation_Handle = new Geolocation();
 Geolocation_Handle.GeolocationHandler(Geolocation_CloudAdaptor.AzureHandle,Geolocation_DS.JSON_data,BLEConnectionDuration);
 
-// call the particular cloud init process
-CloudAdapterInstance.AzureInit(function (){
-	// start the local protocol app
-	CloudLed("1");//Power on the cloud led as the cloud init is now successful
-	//BLEApp();
-	startScanning();
-});
+startAzureClient();
 

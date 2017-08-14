@@ -1,20 +1,23 @@
 var bus = require('../../eventbus');
 function XDK () { };//class for XDK
+var disconnectHandler;
 
 XDKDisconnectHandler = function(peripheral,GroupId) {
+	console.log("Called Bosch-XDK DisconnectHandler" );
 	peripheral.disconnect(function(error){
 		if (error) {
 			console.log(peripheral.uuid + " Disconnect error");
 			console.log(error);
-		} else {
-			console.log(peripheral.uuid + " Disconnected");
 		}
-		bus.emit('sensor_group_disconnected',GroupId);
-		bus.emit('log', 'Disconnected to Bosch-XDK: '	+ peripheral.uuid);
 	});
 };
 
 XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,SensorCapabilities,Capabilities,BLEConnectionDuration,ContinuousBLEConnection) {// XDK handle
+	if(ContinuousBLEConnection===0) {
+		console.log("SetTiomout  for DisconnectHandler");
+		disconnectHandler = setTimeout(XDKDisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
+	}
+	
 	peripheral.connect(function(error) {
 		if(error) {
 			console.log("Error in connection with peripheral (Bosch-XDK): " + peripheral);
@@ -32,8 +35,9 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 				} else {
 					console.log(peripheral.uuid + " Disconnected");
 				}
-				bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
-				bus.emit('log', 'Disconnected to Bosch-XDK: '	+ peripheral.uuid);
+				if(ContinuousBLEConnection===0){
+					clearTimeout(disconnectHandler);
+				}
 			});
 			if(i_should_exit)
 					process.exit();
@@ -128,6 +132,9 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
         bus.emit('disconnected', peripheral.uuid);
         bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
 		bus.emit('log', 'Disconnected to XDK: '	+ peripheral.uuid);
+		if(ContinuousBLEConnection===0){
+			clearTimeout(disconnectHandler);
+		}
 	});
 };
 module.exports = XDK;

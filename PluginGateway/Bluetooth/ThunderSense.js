@@ -2,6 +2,17 @@ var bus = require('../../eventbus');
 function ThunderboardSense () { };//class for thunderboard sense
 var EnvironInterval;
 var LightInterval;
+var disconnectHandler;
+
+ThunderBoardSenseDisconnectHandler = function(peripheral,GroupId) {
+	console.log("Called ThunderBoard-Sense DisconnectHandler" );
+	peripheral.disconnect(function(error){
+		if (error) {
+			console.log(peripheral.uuid + " Disconnect error");
+			console.log(error);
+		}
+	});
+};
 
 function readEnvironment (CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,AmbientLight,BarometricPressure,NoiseLevel,SensorDetails,capIdHumidity,capIdTemperature,capIdUVIndex,capIdAmbientLight,capIdBarometricPressure,capIdNoiseLevel,AmbientTempUnit) {
 	try {
@@ -67,6 +78,10 @@ function readEnvironment (CloudAdaptor,DataWrapper,Humidity,Temperature,UVIndex,
 };
 
 ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudAdaptor,DataWrapper, SensorDetails,SensorCapabilities,Capabilities,BLEConnectionDuration,ContinuousBLEConnection) {
+	if(ContinuousBLEConnection===0) {
+		console.log("SetTiomout  for DisconnectHandler");
+		disconnectHandler = setTimeout(ThunderBoardSenseDisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
+	}
 	var AmbientTempUnit = "Celsius";
 	
 	if (Capabilities != undefined) {
@@ -260,6 +275,9 @@ ThunderboardSense.prototype.ThunderboardSenseHandle= function (peripheral,CloudA
 		bus.emit('log', 'Disconnected to ThunderBoard-Sense: '	+ peripheral.uuid);
 		clearInterval(LightInterval);
 		clearInterval(EnvironInterval);
+		if(ContinuousBLEConnection===0){
+			clearTimeout(disconnectHandler);
+		}
 	});
 }
 module.exports = ThunderboardSense;
