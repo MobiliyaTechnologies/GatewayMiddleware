@@ -24,7 +24,7 @@
     "ws": "^3.0.0"
   },
   "scripts": {
-    "test": "sudo node main.js"
+    "main": "app.js"
   },
   "repository": {
     "type": "git",
@@ -36,5 +36,12 @@
     "iot"
   ],
   "author": "tarun.navadia@mobiliya.com",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "app": "^0.1.0",
+    "electron": "^1.6.11",
+    "electron-packager": "^8.7.2",
+    "electron-prebuilt": "^1.4.13",
+    "electron-rebuild": "^1.6.0"
+  }
 }

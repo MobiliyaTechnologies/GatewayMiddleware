@@ -1,21 +1,48 @@
+'use strict';
 var express = require('express');
 var path = require('path');
 var app = express();
 var getmac = require('getmac');
 var MAC = null;
 var connectionString = null;
+var capabilities = null;
 var fs=require('fs');
 var file = "connectionString.txt";
 var bodyParser = require('body-parser');
 var bus = require('./eventbus');
-var open = require('opn');
+//var open = require('opn');
 var cors = require('cors');
+
+//var { app, BrowserWindow } = require('electron')
+// OR
+// Three Lines
+var electron = require('electron');
+var app1 = electron.app;
+var BrowserWindow = electron.BrowserWindow;
+
+
+var mainWindow = null;
+app1.commandLine.appendSwitch("ignore-certificate-errors");
+app1.on('ready', function() {    
+	mainWindow = new BrowserWindow({ width: 700, height: 650,
+					  show: true,
+                      webPreferences: {
+	                      nodeIntegration: false,
+                          webSecurity: false
+                      }
+		}
+	);
+	//mainWindow.openDevTools();
+	mainWindow.loadURL('http://localhost:65159/');
+});
+app1.on('window-all-closed', app1.quit);
+
 
 require('./ws_server');
 //require('./ws_client');
 console.log("Opening browser window..");
 bus.emit('log',"Opening browser window..");
-open('http://localhost:65159/');
+//open('http://localhost:65159/');
 
 //continue this file if connection string exists else go to login
 var getConnectionString = function() {
