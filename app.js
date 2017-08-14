@@ -32,7 +32,7 @@ app1.on('ready', function() {
                       }
 		}
 	);
-	mainWindow.openDevTools();
+	//mainWindow.openDevTools();
 	mainWindow.loadURL('http://localhost:65159/');
 });
 app1.on('window-all-closed', app1.quit);
