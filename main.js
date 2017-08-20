@@ -12,8 +12,8 @@ var Geolocation = require('./PluginGateway/Bluetooth/Geolocation');
 var CloudAdaptor = require('./PluginGateway/Cloud/AzureAdaptor');
 var SensorDataStructure = require('./PluginGateway/SensorDataStructure/Json');
 var CloudLed = require('./PluginGateway/Cloud/CloudLed');
-var whitelistAddressAll = [];
-var whitelistContentAll = [];
+var whitelistAddressAll;
+var whitelistContentAll;
 var UpdateIP = require('./PluginGateway/Cloud/UpdateIP');
 var GetWhiteList = require('./PluginGateway/Cloud/GetWhiteList');
 const CompatibleSensors = [];
@@ -38,6 +38,7 @@ var disconnectHandler;
 var disconnectHandlerCalled = 0;
 var IsBluetoothPoweredOn = true;
 var IsAzureClientConnected = false;
+var isScanningStarted = false;
 var startScanningIntervalFunction;
 
 //Create an event handler:
@@ -63,7 +64,9 @@ var startAzureClient = function initAzureClinet() {
 		// start the local protocol app
 		CloudLed("1");//Power on the cloud led as the cloud init is now successful
 		//BLEApp();
-		startScanning();
+		if(whitelistAddressAll != undefined && whitelistAddressAll != null && whitelistAddressAll.length > 0) {
+			startScanning();
+		}
 	});
 }
 
@@ -72,14 +75,39 @@ function updateSensorList() {
 	if (fs.existsSync(sensorListFile)) {
 		var fileData = jsonfile.readFileSync(sensorListFile, "utf8");
 		if (fileData == undefined || fileData == null) {
-				 console.log("Unabel to read sensorListFile !!");
-				 //console.log(err);
+			console.log("Unabel to read sensorListFile !!");	
+			console.log("Whitelisted sensor list not available");	
+			bus.emit('log', "Whitelisted sensor list not available. If sensors exist, click submit again to sync.");
+			//console.log(err);
+			if(isScanningStarted == true) {
+				stopScanning();	
+			}
 		} else { 
-			  console.log("Updating list !!");	
-			  //console.log(Object.keys(obj));
-			  //console.log(obj);
-			  cb(Object.keys(fileData), fileData);
+			console.log("Updating list !!");	
+			bus.emit('log', "Whitelisted sensor list Updated");
+			//console.log(Object.keys(obj));
+			//console.log(obj);
+			//cb(Object.keys(fileData), fileData);
+			whitelistAddressAll = Object.keys(fileData);
+			whitelistContentAll = fileData;
+			console.log("Following whitelisted addresses found :",whitelistAddressAll);
+			if(whitelistAddressAll != undefined && whitelistAddressAll != null && whitelistAddressAll.length > 0 && isScanningStarted == false) {
+				startScanning();	
+			} else if(whitelistAddressAll == undefined || whitelistAddressAll == null || whitelistAddressAll.length <= 0){
+				if(isScanningStarted == true){
+					stopScanning();
+				}
+				console.log("Whitelisted sensor list not available");	
+				bus.emit('log', "Whitelisted sensor list not available. If sensors exist, click submit again to sync.");
+			}
 		}
+	} else {
+		console.log("Whitelisted sensor lint not available");
+		bus.emit('log', "Whitelisted sensor list not available. If sensors exist, click submit again to sync.");
+		if(isScanningStarted == true) {
+			stopScanning();	
+		}
+			
 	}
 }
 
@@ -192,15 +220,8 @@ bus.on('updateSensorTypes', updateSensorTypesHandler);
 bus.on('connected', sensorConnectedHandler);
 bus.on('azureClientDisconnected', azureClientDisconnected);
 
-//function which retireves the whitelist address from the api and saves to file "whitelist.json", and updates the global variable "whitelistAddressAll,whitelistContentAll"
-//cb is the callback function after the getwhitelist for updating the global variables
-function cb(whitelistaddresses,whitelistContent){
-	console.log("Following whitelisted addresses found :",whitelistaddresses);
-	whitelistAddressAll = whitelistaddresses;
-	whitelistContentAll = whitelistContent;
-}
-
 function stopScanning() {
+	isScanningStarted = false;
 	noble.stopScanning();	//Win	
 	console.log("onStateChange clear HandleQueueInterval");
 	bus.emit('all_sensor_group_disconnected');
@@ -210,23 +231,26 @@ function stopScanning() {
 function startScanning() {
 	//start scanning for ble services
 	try {
+		isScanningStarted = true;
 		noble.on('stateChange', function(state) {
 			console.log("onStateChange to ", state);
 			bus.emit('log',"Bluetooth state changed to " + state);
 			if (state === 'poweredOn') {
 				IsBluetoothPoweredOn = true;
 				//noble.startScanning(allowDuplicates);
-				setTimeout( function() { 
-					console.log("onStateChange startScanning");
-					bus.emit('log',"Start Scanning on Bluetooth ON");
-					noble.startScanning(null,allowDuplicates);
-					//BLEApp();
-				}, 2000);
-				console.log("onStateChange started scanning for BLE Devices");
-			
-				if (config.ContinuousBLEConnection === 0) {
-					console.log("onStateChange HandleQueueInterval");
-					HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
+				if(IsAzureClientConnected ) {
+					setTimeout( function() { 
+						console.log("onStateChange startScanning");
+						bus.emit('log',"Start Scanning on Bluetooth ON");
+						noble.startScanning(null,allowDuplicates);
+						//BLEApp();
+					}, 2000);
+					console.log("onStateChange started scanning for BLE Devices");
+				
+					if (config.ContinuousBLEConnection === 0) {
+						console.log("onStateChange HandleQueueInterval");
+						HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
+					}
 				}
 			} else {
 				IsBluetoothPoweredOn = false;
@@ -286,7 +310,7 @@ function BLEApp () {
 						//console.log("List items: ", element.id);
 						if(element.id == peripheral.id) {
 							found = true;
-							return;SensorCapabilities
+							return;
 						}
 				});
 				if (!found) {
@@ -340,14 +364,16 @@ function BLEApp () {
         console.log("Scanning to start soon in " + config.BLEReconnectionInterval + " ms");
 		if(IsBluetoothPoweredOn && IsAzureClientConnected) {
 			clearTimeout(startScanningIntervalFunction);
-		    startScanningIntervalFunction = setTimeout(function() {
-				if(IsBluetoothPoweredOn) {
-					noble.startScanning(null,allowDuplicates);
-					console.log("ScanningStopped => ScanningStarted");
-					bus.emit('log',"ScanningStarted");
-				}
-			}, config.BLEReconnectionInterval);
-			//}, 1000);
+			if(whitelistAddressAll!=undefined && whitelistAddressAll!=null && whitelistAddressAll.length>0) {
+				startScanningIntervalFunction = setTimeout(function() {
+					if(IsBluetoothPoweredOn) {
+						noble.startScanning(null,allowDuplicates);
+						console.log("ScanningStopped => ScanningStarted");
+						bus.emit('log',"ScanningStarted");
+					}
+				}, config.BLEReconnectionInterval);
+				//}, 1000);
+			}
 		}
 	});
 
@@ -380,6 +406,7 @@ function HandleQueue() {
 }
 
 function connectPeripheral(peripheral) {
+	console.log("connectPeripheral");
 	noble.stopScanning();	//Win
 	if	(peripheral != undefined) {
 			console.log("List POP: ", peripheral.id);

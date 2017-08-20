@@ -22,6 +22,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 
 	var AmbientTempUnit = "Celsius";
 	var ObjectTempUnit = "Celsius";
+	var isFirstLuxometerReading = true;
 	
 	if (Capabilities != undefined) {
 		Capabilities.forEach(function(elem, index) {
@@ -137,243 +138,308 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					}
 				}
 
-				// Temperature
-				if (capIdAmbientTemperature > -1 || capIdObjectTemperature > -1) {			
-					var TemperatureService = services[3]; // uuid: f000aa0004514000b000000000000000
-					if (TemperatureService == undefined) {
-						return;
-					}
-					TemperatureService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
-							console.log('Temperature discovered the following characteristics:');
-							for ( var i in characteristics) {
-								console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
+                for ( var i in services) {
+					console.log("service ", services[i].uuid);
+					if(services[i].uuid == "f000aa0004514000b000000000000000") {	//temp service uuid
+						// Temperature
+						if (capIdAmbientTemperature > -1 || capIdObjectTemperature > -1) {
+							//var TemperatureService = services[3]; // uuid: f000aa0004514000b000000000000000
+							var TemperatureService = services[i]; // uuid: f000aa0004514000b000000000000000
+							if (TemperatureService == undefined) {
+								return;
 							}
-					});
-
-					TemperatureService.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
-						//console.log("Temperature characteristicsDiscover " + characteristics);
-						var startSamplingTemperatureData = characteristics[1];
-						var notifyServiceTemperatureData = characteristics[0];
-						if (notifyServiceTemperatureData == undefined || startSamplingTemperatureData == undefined) {
-							return;
-						}
-						notifyServiceTemperatureData.on('data', function(data,isNotification) { // notification events form temperature service
-
-							convertIrTemperatureData(data, AmbientTempUnit, ObjectTempUnit, function(objectTemperature, ambientTemperature) {
-								if(capIdAmbientTemperature > -1) {
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-													 AssetBarcode:SensorDetails.AssetBarcode,AmbientTemperature:ambientTemperature};
-									CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud							
-								}
-								if(capIdObjectTemperature > -1) {
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdObjectTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-													 AssetBarcode:SensorDetails.AssetBarcode,ObjectTemperature:objectTemperature};
-									CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud							
-								}
+							TemperatureService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
+									console.log('Temperature discovered the following characteristics:');
+									for ( var i in characteristics) {
+										console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
+									}
 							});
-						});
 
-						var writeData = new Buffer([0x01]);
-							notifyServiceTemperatureData.subscribe(function(error) { // enabling notifications for temperature service
-								console.log('Temperature Subscription for notification enabled ',error);
-								notifyServiceTemperatureData.notify(true, function(){ // starting notifications
-									startSamplingTemperatureData.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
-										console.log('starting Temperature Sampling',error);
+							TemperatureService.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
+								//console.log("Temperature characteristicsDiscover " + characteristics);
+								var startSamplingTemperatureData;	// = characteristics[1];	// uuid: f000aa0204514000b000000000000000
+								var notifyServiceTemperatureData;	// = characteristic[0];		// uuid: f000aa0104514000b000000000000000
+								for ( var i in characteristics) {
+									console.log("characteristic ", characteristics[i].uuid);
+									if(characteristics[i].uuid == "f000aa0204514000b000000000000000") {	//temp characteristic uuid
+										startSamplingTemperatureData = characteristics[i];
+									} else if(characteristics[i].uuid == "f000aa0104514000b000000000000000") {
+										notifyServiceTemperatureData = characteristics[i];
+									}
+								}
+								if (notifyServiceTemperatureData == undefined || startSamplingTemperatureData == undefined) {
+									return;
+								}
+								notifyServiceTemperatureData.on('data', function(data,isNotification) { // notification events form temperature service
+
+									convertIrTemperatureData(data, AmbientTempUnit, ObjectTempUnit, function(objectTemperature, ambientTemperature) {
+										if(capIdAmbientTemperature > -1) {
+											var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+															AssetBarcode:SensorDetails.AssetBarcode,AmbientTemperature:ambientTemperature};
+											CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud							
+										}
+										if(capIdObjectTemperature > -1) {
+											var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdObjectTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+															AssetBarcode:SensorDetails.AssetBarcode,ObjectTemperature:objectTemperature};
+											CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud							
+										}
 									});
 								});
-							});
-						});
-					}
 
-				// Humidity
-				if (capIdHumidity > -1) {			
-					var HumidityService = services[4]; // uuid: f000aa2004514000b000000000000000
-					if (HumidityService == undefined) {
-						return;
-					}
-					HumidityService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
-						console.log('Humidity discovered the following characteristics:');
-						for ( var i in characteristics) {
-							console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
-						}
-					});
-
-				HumidityService.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
-					//console.log("Humidity characteristicsDiscover " + characteristics);
-					var startSamplingHumidityData = characteristics[1];
-					var notifyServiceHumidityData = characteristics[0];
-					
-					if (notifyServiceHumidityData == undefined || startSamplingHumidityData == undefined) {
-						return;
-					}
-					
-					notifyServiceHumidityData.on('data', function(data,isNotification) { // notification events form temperature service
-						convertHumidityData(data, function(ambientTemperature, humidity) {
-							
-							// data in percentage
-							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdHumidity,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-											 AssetBarcode:SensorDetails.AssetBarcode,Humidity:humidity};
-							CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
-						});
-						});
-						var writeData = new Buffer([0x01]);
-						notifyServiceHumidityData.subscribe(function(error) { // enabling notifications for temperature service
-							console.log('Subscription for notification enabled ',error);
-							notifyServiceHumidityData.notify(true, function(){ // starting notifications
-								startSamplingHumidityData.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
-									console.log('starting Humidity Sampling',error);
-								});
-							});
-						});
-					});
-				}
-
-				// Barometric Pressure
-				if (capIdBarometricPressure > -1) {			
-					var BarometricPressureService = services[5]; // uuid: f000aa4004514000b000000000000000
-					if (BarometricPressureService == undefined) {
-						return;
-					}
-					BarometricPressureService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
-						console.log('BarometricPressure discovered the following characteristics:');
-						for ( var i in characteristics) {
-							console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
-						}
-					});
-
-				BarometricPressureService.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
-					//console.log("BarometricPressure characteristicsDiscover " + characteristics);
-					var startSamplingBarometricPressureData = characteristics[1];
-					var notifyServiceBarometricPressureData = characteristics[0];
-					
-					if (notifyServiceBarometricPressureData == undefined || startSamplingBarometricPressureData == undefined) {
-						return;
-					}
-					
-					notifyServiceBarometricPressureData.on('data', function(data,isNotification) { // notification events form temperature service
-						convertBarometricPressureData(data, function(barometricPressure) {
-							//console.log("Barometric Pressure: ", barometricPressure);
-							// data in mBar
-							var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdBarometricPressure,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-											 AssetBarcode:SensorDetails.AssetBarcode,BarometricPressure:barometricPressure};
-							CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
-						});	
-						});
-						var writeData = new Buffer([0x01]);
-						notifyServiceBarometricPressureData.subscribe(function(error) { // enabling notifications for barometric pressure service
-							console.log('Subscription for notification enabled ',error);
-							notifyServiceBarometricPressureData.notify(true, function(){ // starting notifications
-								startSamplingBarometricPressureData.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
-									console.log('starting BarometricPressure Sampling',error);
-								});
-							});
-						});
-					});
-				}
-
-				// MPU9250 (Accelerometer, Magnetometer, Gyroscope)
-				if (capIdAccelerometer > -1 || capIdMagnetometer > -1 || capIdGyroscope > -1) {
-					var MPU9250Service = services[6]; // uuid: f000aa8004514000b000000000000000
-					if (MPU9250Service == undefined) {
-						return;
-					}
-				MPU9250Service.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
-						console.log('MPU9250 discovered the following characteristics:');
-						for ( var i in characteristics) {
-							console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
-						}
-				});
-
-				MPU9250Service.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
-					//console.log("MPU9250 characteristicsDiscover " + characteristics);
-					var startSamplingMPU9250Data = characteristics[1];
-					var notifyServiceMPU9250Data = characteristics[0];
-					
-					if (notifyServiceMPU9250Data == undefined || startSamplingMPU9250Data == undefined) {
-						return;
-					}
-					notifyServiceMPU9250Data.on('data', function(data,isNotification) { // notification events form temperature service
-						
-						convertMPU9250Data(data, function(xA, yA, zA, xG, yG, zG, xM, yM, zM) {
-							if(capIdAccelerometer > -1) {
-								// data in G
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAccelerometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-													 AssetBarcode:SensorDetails.AssetBarcode,x:xA,y:yA,z:zA};
-									CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
-							}
-							if(capIdMagnetometer > -1) {
-								// data in mT
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdMagnetometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-													 AssetBarcode:SensorDetails.AssetBarcode,x:xM,y:yM,z:zM};
-									CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
-							}
-							if (capIdGyroscope > -1) {
-								// data in degree/s
-									var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdGyroscope,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-													 AssetBarcode:SensorDetails.AssetBarcode,x:xG,y:yG,z:zG};
-									CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
-							}
-						});
-						});
-
-
-						var buffer = new Buffer(2);
-						buffer.writeUInt16LE(0x007f, 0);
-						var withoutResponse = (startSamplingMPU9250Data.properties.indexOf('writeWithoutResponse') !== -1) &&
-							  (startSamplingMPU9250Data.properties.indexOf('write') === -1);
-
-						notifyServiceMPU9250Data.subscribe(function(error) { // enabling notifications for MPU9250 service
-							console.log('Subscription for notification enabled ',error);
-							notifyServiceMPU9250Data.notify(true, function(){ // starting notifications
-								startSamplingMPU9250Data.write(buffer,withoutResponse,function(error) { //writing data to start notifications
-									console.log('starting MPU9250 Sampling',error);
-								});
-							});
-						});
-					});
-				}
-
-				// Luxometer
-				if (capIdLuxometer > -1) {			
-					var LuxometerService = services[7]; // uuid: f000aa7004514000b000000000000000
-					if (LuxometerService == undefined) {
-						return;
-					}
-					LuxometerService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
-							console.log('Luxometer discovered the following characteristics:');
-							for ( var i in characteristics) {
-								console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
-							}
-					});
-
-					LuxometerService.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
-						//console.log("Luxometer characteristicsDiscover " + characteristics);
-						var startSamplingLuxometerData = characteristics[1];
-						var notifyServiceLuxometerData = characteristics[0];
-
-						if (notifyServiceLuxometerData == undefined || startSamplingLuxometerData == undefined) {
-							return;
-						}
-						
-						notifyServiceLuxometerData.on('data', function(data,isNotification) { // notification events form temperature service
-							convertLuxometerData(data, function(lux) {
-								// data in lux
-								var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdLuxometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-												 AssetBarcode:SensorDetails.AssetBarcode,Luxometer:lux};
-								CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
-							});
-							});
-							var writeData = new Buffer([0x01]);
-							notifyServiceLuxometerData.subscribe(function(error) { // enabling notifications for Luxometer service
-								console.log('Subscription for notification enabled ',error);
-								notifyServiceLuxometerData.notify(true, function(){ // starting notifications
-									startSamplingLuxometerData.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
-										console.log('starting Luxometer Sampling',error);
+								var writeData = new Buffer([0x01]);
+									notifyServiceTemperatureData.subscribe(function(error) { // enabling notifications for temperature service
+										console.log('Temperature Subscription for notification enabled ',error);
+										notifyServiceTemperatureData.notify(true, function(){ // starting notifications
+											startSamplingTemperatureData.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
+												console.log('starting Temperature Sampling',error);
+											});
+										});
 									});
 								});
-							});
-						});
-				}
+							}
+						}
+						else if(services[i].uuid == "f000aa2004514000b000000000000000") {	//hiumidity service uuid
+
+							// Humidity
+							if (capIdHumidity > -1) {
+								var HumidityService = services[i]; // uuid: f000aa2004514000b000000000000000
+								if (HumidityService == undefined) {
+									return;
+								}
+								HumidityService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
+									console.log('Humidity discovered the following characteristics:');
+									for ( var i in characteristics) {
+										console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
+									}
+								});
+
+								HumidityService.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
+									console.log("Humidity characteristicsDiscover " + characteristics);
+									var startSamplingHumidityData;	// = characteristics[1];	 // uuid: f000aa2204514000b000000000000000
+									var notifyServiceHumidityData;	// = characteristics[i];	// uuid: f000aa2104514000b000000000000000
+									for ( var i in characteristics) {
+										console.log("characteristic ", characteristics[i].uuid);
+										if(characteristics[i].uuid == "f000aa2204514000b000000000000000") {	//temp characteristic uuid
+											startSamplingHumidityData = characteristics[i];
+										} else if(characteristics[i].uuid == "f000aa2104514000b000000000000000") {
+											notifyServiceHumidityData = characteristics[i];
+										}
+									}
+									
+									if (notifyServiceHumidityData == undefined || startSamplingHumidityData == undefined) {
+										return;
+									}
+								
+									notifyServiceHumidityData.on('data', function(data,isNotification) { // notification events form humidity service
+										//console.log("Humidity data received");
+										convertHumidityData(data, function(ambientTemperature, humidity) {
+											
+											// data in percentage
+											var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdHumidity,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+															AssetBarcode:SensorDetails.AssetBarcode,Humidity:humidity};
+											CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+										});
+									});
+									var writeData = new Buffer([0x01]);
+									notifyServiceHumidityData.subscribe(function(error) { // enabling notifications for humidity service
+										console.log('Subscription for notification enabled ',error);
+										notifyServiceHumidityData.notify(true, function(){ // starting notifications
+											startSamplingHumidityData.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
+												console.log('starting Humidity Sampling',error);
+											});
+										});
+									});
+								});
+							}
+						} 
+						else if(services[i].uuid == "f000aa4004514000b000000000000000") {	//barometric pressure service uuid
+							// Barometric Pressure
+							if (capIdBarometricPressure > -1) {			
+								var BarometricPressureService = services[i]; // uuid: f000aa4004514000b000000000000000
+								if (BarometricPressureService == undefined) {
+									return;
+								}
+								BarometricPressureService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
+									console.log('BarometricPressure discovered the following characteristics:');
+									for ( var i in characteristics) {
+										console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
+									}
+								});
+
+							BarometricPressureService.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
+								//console.log("BarometricPressure characteristicsDiscover " + characteristics);
+								var startSamplingBarometricPressureData; // = characteristics[1];	// uuid: f000aa4204514000b000000000000000
+								var notifyServiceBarometricPressureData; // = characteristics[0];	// uuid: f000aa4104514000b000000000000000
+								for ( var i in characteristics) {
+										console.log("characteristic ", characteristics[i].uuid);
+										if(characteristics[i].uuid == "f000aa4204514000b000000000000000") {	//temp characteristic uuid
+											startSamplingBarometricPressureData = characteristics[i];
+										} else if(characteristics[i].uuid == "f000aa4104514000b000000000000000") {
+											notifyServiceBarometricPressureData = characteristics[i];
+										}
+								}
+								if (notifyServiceBarometricPressureData == undefined || startSamplingBarometricPressureData == undefined) {
+									return;
+								}
+								
+								notifyServiceBarometricPressureData.on('data', function(data,isNotification) { // notification events form temperature service
+									convertBarometricPressureData(data, function(barometricPressure) {
+										//console.log("Barometric Pressure: ", barometricPressure);
+										// data in mBar
+										var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdBarometricPressure,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+														AssetBarcode:SensorDetails.AssetBarcode,BarometricPressure:barometricPressure};
+										CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+									});	
+									});
+									var writeData = new Buffer([0x01]);
+									notifyServiceBarometricPressureData.subscribe(function(error) { // enabling notifications for barometric pressure service
+										console.log('Subscription for notification enabled ',error);
+										notifyServiceBarometricPressureData.notify(true, function(){ // starting notifications
+											startSamplingBarometricPressureData.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
+												console.log('starting BarometricPressure Sampling',error);
+											});
+										});
+									});
+								});
+							}
+						} 
+						else if(services[i].uuid == "f000aa8004514000b000000000000000") {	//mpu9 pressure service uuid
+
+							// MPU9250 (Accelerometer, Magnetometer, Gyroscope)
+							if (capIdAccelerometer > -1 || capIdMagnetometer > -1 || capIdGyroscope > -1) {
+								var MPU9250Service = services[i]; // uuid: f000aa8004514000b000000000000000
+								console.log("MPU9250Service uuid : ", MPU9250Service.uuid);
+								if (MPU9250Service == undefined) {
+									return;
+								}
+								MPU9250Service.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
+									console.log('MPU9250 discovered the following characteristics:');
+									for ( var i in characteristics) {
+										console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
+									}
+								});
+
+							MPU9250Service.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
+								//console.log("MPU9250 characteristicsDiscover " + characteristics);
+								var notifyServiceMPU9250Data;// = characteristics[1];	// uuid: f000aa8104514000b000000000000000
+								var startSamplingMPU9250Data;// = characteristics[0];	// uuid: f000aa8204514000b000000000000000
+								for ( var i in characteristics) {
+										console.log("characteristic ", characteristics[i].uuid);
+										if(characteristics[i].uuid == "f000aa8104514000b000000000000000") {	//temp characteristic uuid
+											notifyServiceMPU9250Data = characteristics[i];
+										} else if(characteristics[i].uuid == "f000aa8204514000b000000000000000") {
+											startSamplingMPU9250Data = characteristics[i];
+										}
+								}
+								if (notifyServiceMPU9250Data == undefined || startSamplingMPU9250Data == undefined) {
+									return;
+								}
+								notifyServiceMPU9250Data.on('data', function(data,isNotification) { // notification events form temperature service
+									
+									convertMPU9250Data(data, function(xA, yA, zA, xG, yG, zG, xM, yM, zM) {
+										if(capIdAccelerometer > -1) {
+											// data in G
+											/*if(xA === 0 && yA === 0 && zA === 0) {
+												//first value is always 0
+												return;
+											}*/
+												var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAccelerometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+																AssetBarcode:SensorDetails.AssetBarcode,x:xA,y:yA,z:zA};
+												CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+										}
+										if(capIdMagnetometer > -1) {
+											// data in mT
+											if(xM === 0 && yM === 0 && zM === 0) {
+												return;
+											}
+												var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdMagnetometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+																AssetBarcode:SensorDetails.AssetBarcode,x:xM,y:yM,z:zM};
+												CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+										}
+										if (capIdGyroscope > -1) {
+											// data in degree/s
+											if(xG === 0 && yG === 0 && zG === 0) {
+												return;
+											}
+												var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdGyroscope,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+																AssetBarcode:SensorDetails.AssetBarcode,x:xG,y:yG,z:zG};
+												CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+										}
+									});
+									});
+
+
+									var buffer = new Buffer(2);
+									buffer.writeUInt16LE(0x007f, 0);
+									var withoutResponse = (startSamplingMPU9250Data.properties.indexOf('writeWithoutResponse') !== -1) &&
+										(startSamplingMPU9250Data.properties.indexOf('write') === -1);
+
+									notifyServiceMPU9250Data.subscribe(function(error) { // enabling notifications for MPU9250 service
+										console.log('Subscription for notification enabled ',error);
+										notifyServiceMPU9250Data.notify(true, function(){ // starting notifications
+											startSamplingMPU9250Data.write(buffer,withoutResponse,function(error) { //writing data to start notifications
+												console.log('starting MPU9250 Sampling',error);
+											});
+										});
+									});
+								});
+							}
+						} 
+						else if(services[i].uuid == "f000aa7004514000b000000000000000") {	//luxometer service uuid
+							// Luxometer
+							if (capIdLuxometer > -1) {			
+								var LuxometerService = services[i]; // uuid: f000aa7004514000b000000000000000
+								if (LuxometerService == undefined) {
+									return;
+								}
+								LuxometerService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
+										console.log('Luxometer discovered the following characteristics:');
+										for ( var i in characteristics) {
+											console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
+										}
+								});
+
+								LuxometerService.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
+									//console.log("Luxometer characteristicsDiscover " + characteristics);
+									var startSamplingLuxometerData;// = characteristics[1];	// uuid: f000aa7204514000b000000000000000
+									var notifyServiceLuxometerData;// = characteristics[0];	// uuid: f000aa7104514000b000000000000000
+									for ( var i in characteristics) {
+										console.log("characteristic ", characteristics[i].uuid);
+										if(characteristics[i].uuid == "f000aa7204514000b000000000000000") {	//temp characteristic uuid
+											startSamplingLuxometerData = characteristics[i];
+										} else if(characteristics[i].uuid == "f000aa7104514000b000000000000000") {
+											notifyServiceLuxometerData = characteristics[i];
+										}
+									}
+									if (notifyServiceLuxometerData == undefined || startSamplingLuxometerData == undefined) {
+										return;
+									}
+									
+									notifyServiceLuxometerData.on('data', function(data,isNotification) { // notification events form temperature service
+										convertLuxometerData(data, function(lux) {
+											// data in lux
+											if(isFirstLuxometerReading) {
+												isFirstLuxometerReading = false;
+												return;
+											}
+											var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdLuxometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+															AssetBarcode:SensorDetails.AssetBarcode,Luxometer:lux};
+											CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+										});
+										});
+										var writeData = new Buffer([0x01]);
+										notifyServiceLuxometerData.subscribe(function(error) { // enabling notifications for Luxometer service
+											console.log('Subscription for notification enabled ',error);
+											notifyServiceLuxometerData.notify(true, function(){ // starting notifications
+												startSamplingLuxometerData.write(new Buffer(writeData),false,function(error) { //writing data to start notifications
+													console.log('starting Luxometer Sampling',error);
+												});
+											});
+										});
+									});
+								}
+						}
+					}
 
 			} catch(error) {
 				console.log(error);
@@ -417,7 +483,7 @@ convertIrTemperatureData = function(data, AmbientTempUnit, ObjectTempUnit, callb
 convertHumidityData = function(data, callback) {
   var temperature = -46.85 + 175.72 / 65536.0 * data.readUInt16LE(0);
   var humidity = -6.0 + 125.0 / 65536.0 * (data.readUInt16LE(2) & ~0x0003);
-
+  //console.log("Humidity - temp: " + temperature + ", humidity: " + humidity);
   callback(temperature, humidity);
 };
 

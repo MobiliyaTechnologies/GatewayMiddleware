@@ -224,6 +224,7 @@
                     })
                         .catch(function (error) {
                             console.log("Connection String Error ::",error);
+                            alert("Something went wrong, please check registered GatewayId. [" + error.statusText + "]!\nPlease SignIn again.");
                         });
 
                 }
@@ -353,6 +354,8 @@
 					
                     }).catch(function (error) {
                             console.log("Login Details API Error :: ",error);
+                            alert("Could not login, please try again !");
+                            $scope.loader.loading = false;
                     });
 			}
 			
