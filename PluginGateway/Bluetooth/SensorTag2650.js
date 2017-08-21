@@ -321,16 +321,20 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 
 							MPU9250Service.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
 								//console.log("MPU9250 characteristicsDiscover " + characteristics);
-								var notifyServiceMPU9250Data;// = characteristics[1];	// uuid: f000aa8104514000b000000000000000
-								var startSamplingMPU9250Data;// = characteristics[0];	// uuid: f000aa8204514000b000000000000000
+								var startSamplingMPU9250Data = characteristics[1];	// uuid: f000aa8104514000b000000000000000
+								var notifyServiceMPU9250Data = characteristics[0];	// uuid: f000aa8204514000b000000000000000
+								/*
+								var startSamplingMPU9250Data;// = characteristics[1];	// uuid: f000aa8104514000b000000000000000
+								var notifyServiceMPU9250Data;// = characteristics[0];	// uuid: f000aa8204514000b000000000000000
 								for ( var i in characteristics) {
 										console.log("characteristic ", characteristics[i].uuid);
 										if(characteristics[i].uuid == "f000aa8104514000b000000000000000") {	//temp characteristic uuid
-											notifyServiceMPU9250Data = characteristics[i];
-										} else if(characteristics[i].uuid == "f000aa8204514000b000000000000000") {
 											startSamplingMPU9250Data = characteristics[i];
+										} else if(characteristics[i].uuid == "f000aa8204514000b000000000000000") {
+											notifyServiceMPU9250Data = characteristics[i];
 										}
 								}
+								*/
 								if (notifyServiceMPU9250Data == undefined || startSamplingMPU9250Data == undefined) {
 									return;
 								}
@@ -339,10 +343,10 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 									convertMPU9250Data(data, function(xA, yA, zA, xG, yG, zG, xM, yM, zM) {
 										if(capIdAccelerometer > -1) {
 											// data in G
-											/*if(xA === 0 && yA === 0 && zA === 0) {
+											if(xA === 0 && yA === 0 && zA === 0) {
 												//first value is always 0
 												return;
-											}*/
+											}
 												var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAccelerometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																AssetBarcode:SensorDetails.AssetBarcode,x:xA,y:yA,z:zA};
 												CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
