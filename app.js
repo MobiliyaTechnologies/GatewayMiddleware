@@ -81,6 +81,12 @@ app.get('/macaddress', function (req, res) {
     console.log( MAC );
     res.end( MAC );
 })
+app.get('/version', function (req, res) {
+    
+	var config = require('./config');
+	console.log( config.Version );
+    res.end( config.Version );
+})
 app.post('/connectionstring', function (req, res) {
 	console.log(req.body);
 	connectionString = req.body.connectionString;
