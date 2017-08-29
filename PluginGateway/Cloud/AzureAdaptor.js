@@ -58,6 +58,7 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 				console.log('Azure Iot Sdk Connected');
 				bus.emit('log','Azure Iot Sdk Connected');
 				cb();
+				
 				client.on('message', function (msg) {
 					console.log("CloudToDevice Message Received");
 					console.log('Message Received ! Id: ' + msg.messageId + ' Body: ' + msg.data + ' PropertyList:  ', msg.properties.propertyList[0]);
@@ -82,6 +83,7 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 				    // MQTT is simpler: it accepts the message by default, and doesn't support rejecting or abandoning a message.
 					});
 					// Create a message and send it to the IoT Hub every second
+				
 				client.on('error', function (err) {
 					console.log("Error in Azure client ", err);
 					bus.emit('log', "Error connecting with Azure client");

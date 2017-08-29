@@ -6,11 +6,12 @@ GatewayID:12345,
 KafkaTopic:"intel",
 KafkaPartitionNumber:0,
 GatewayTimezone:"Asia/Kolkata",
-Latitude:18.5521273,
-Longitude:73.7917362,
+Latitude:47.6464737,
+Longitude:-122.2090137,
 ContinuousBLEConnection:0,	//0: Connect at intervals, 1: Continuous connection
 SimultaneousBLEConnections:4,
 BLEConnectionDuration:3500,
-BLEReconnectionInterval:5000
+BLEReconnectionInterval:5000,
+Version:"1.01"
 };
 module.exports = config;

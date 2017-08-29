@@ -13,13 +13,14 @@
 		<h2>Asset Monitoring Configuration</h2>
 
 		  
-		     <h4>Gateway: {{gatewayMac}}</h4>
+		     <p>Gateway: {{gatewayMac}}</p>
+		     <p>Version: {{gatewayVersion}}</p>
          Enter Rest Server Url: <input style="width:450px" type = "text" ng-model = "config.restServer"><br><br>
        <!--  Enter B2c Application Id: <input type = "text" ng-model = "config.b2cApplicationId"><br>
 		 Enter B2c Tenant Name: <input type = "text" ng-model = "config.tenantName"><br>
 		 Enter B2c Sign In Policy: <input type = "text" ng-model = "config.signInPolicyName"><br>
 		  -->
-		  <div style="margin-top:10px;margin-bottom:20px;width=50" >
+		  <div style="margin-top:10px;margin-bottom:10px;width=50" >
 			  <button style="height:30px;width:150px" ng-click = "submit('click')" >Submit</button>
 		 	  <div ng-show="loader.loading"  >Signing in... Please wait.</div>
 		  </div>
@@ -154,6 +155,7 @@
     });
          mainApp.controller('mainController', function($scope,aadService,$http,$websocket){ 
 			 $scope.gatewayMac="Loading.."
+             $scope.gatewayVersion = "Loading..";
 			 $scope.loader = { 
 
               loading : false
@@ -224,6 +226,7 @@
                     })
                         .catch(function (error) {
                             console.log("Connection String Error ::",error);
+                            alert("Something went wrong, please check registered GatewayId. [" + error.statusText + "]!\nPlease SignIn again.");
                         });
 
                 }
@@ -353,6 +356,8 @@
 					
                     }).catch(function (error) {
                             console.log("Login Details API Error :: ",error);
+                            alert("Could not login, please try again !");
+                            $scope.loader.loading = false;
                     });
 			}
 			
@@ -375,8 +380,27 @@
                         .catch(function (error) {
                             console.log("$scope.gatewayMac error: ", error);
                         });
-
 			}
+			
+			$scope.showVersion=function(){
+				//console.log("$scope.gatewayMac", $scope.gatewayMac);
+			  $http({
+                        url: 'http://localhost:65159/version',
+                        dataType: 'json',
+                        method: 'GET',
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    }).then(function (response) {
+				  		console.log("$scope.gatewayVersion response: ", response.data);
+						$scope.gatewayVersion = response.data;
+				        console.log("$scope.gatewayVersion response: ", $scope.gatewayVersion);
+                    })
+                        .catch(function (error) {
+                            console.log("$scope.gatewayVersion error: ", error);
+                        });
+			}
+
 			$scope.aadLogin=function(state){
 			
 				aadService.signIn($scope.config,function (b2cSession) {
@@ -406,7 +430,7 @@
 			
 			$scope.getConfig();
 			$scope.showMacAddr();
-			 
+			$scope.showVersion(); 
 			 
 			 
 			     var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
