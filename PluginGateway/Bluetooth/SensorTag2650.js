@@ -81,13 +81,14 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 
 		peripheral.once('rssiUpdate', function(rssi) {
 			console.log("once RSSIUpdate");
-			if(rssi == undefined) {
-				return;
-			}
-			console.log("RSSI  SENT : ", rssi );
-			var json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+			if(rssi == undefined || rssi == 127) {
+				console.log("Error reading RSSI\n");
+			} else {
+			    console.log("RSSI  SENT : ", rssi );
+			    var json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 													 AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi};
-			CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+			    CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+			}
 		});
 		
 		console.log('discoverServices for '	+ peripheral.uuid);
