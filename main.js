@@ -39,6 +39,7 @@ var disconnectHandlerCalled = 0;
 var IsBluetoothPoweredOn = true;
 var IsAzureClientConnected = false;
 var isScanningStarted = false;
+var startedBLEApp = 0;
 var startScanningIntervalFunction;
 
 //Create an event handler:
@@ -55,6 +56,7 @@ var azureClientDisconnected = function () {
 	console.log("Stop scanning and try to reconnect azure client");
 	stopScanning();
 	setTimeout(startAzureClient, 60000);
+	clearTimeout(startScanningIntervalFunction);
 }
 
 var startAzureClient = function initAzureClinet() {
@@ -260,7 +262,10 @@ function startScanning() {
 			}	
 			
 		});
-		BLEApp();
+		if (startedBLEApp === 0) {
+	            BLEApp();
+		    startedBLEApp = 1;
+		}
 		
 		console.log("startScanning - started scanning for BLE Devices");
 		noble.startScanning(null,allowDuplicates);
