@@ -19,6 +19,9 @@ var fs = require('fs');
 var sensorListFile = 'sensorlist.json';
 var SensorTypesFile = 'sensorTypes.json';
 
+let appInsights = require('applicationinsights');
+let appInsightsClient = appInsights.client;
+
 // String containing Hostname, Device Id & Device Key in the following formats:
 //  "HostName=<iothub_host_name>;DeviceId=<device_id>;SharedAccessKey=<device_key>"
 //var connectionString = "HostName=AssetIOTHub.azure-devices.net;DeviceId=mySecondDevice;SharedAccessKey=lHwO1mM76ApXn3bGtsN8vQcY3UMSM0w/IrlyjTzpWjk=";
@@ -40,6 +43,7 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 	fs.readFile('././connectionString.txt', 'utf8', function (err,data) {
 	    if (err) {
 		    console.log(err);
+			appInsightsClient.trackException(err);
 	    }
 		console.log(data);
 		connectionString = data;
@@ -52,6 +56,7 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 		client.open(function (err) {
 			if (err) {
 				console.error('Could not connect: ' + err.message);
+				appInsightsClient.trackException(err);
 				bus.emit('log','Could not connect to Azure');
 				bus.emit('azureClientDisconnected');
 			} else {
@@ -86,6 +91,7 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 				
 				client.on('error', function (err) {
 					console.log("Error in Azure client ", err);
+					appInsightsClient.trackException(err);
 					bus.emit('log', "Error connecting with Azure client");
 					bus.emit('azureClientDisconnected');
 				});
@@ -105,7 +111,10 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 // Helper function to print results in the console
 function printResultFor(op) {
   return function printResult(err, res) {
-    if (err) console.log(op + ' error: ' + err.toString());
+    if (err) {
+		appInsightsClient.trackException(err);
+		console.log(op + ' error: ' + err.toString());
+	}
     if (res) console.log(op + ' status: ' + res.constructor.name);
   };
 }
@@ -200,6 +209,7 @@ var saveData = function(msg, status) {
 	} catch (err) {
 		// handle the error safely
 		console.log(err);
+		appInsightsClient.trackException(err);
 	}
 }
 

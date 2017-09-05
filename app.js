@@ -13,6 +13,11 @@ var bus = require('./eventbus');
 //var open = require('opn');
 var cors = require('cors');
 
+let appInsights = require('applicationinsights');
+appInsights.setup("_your_ikey_").start();
+let client = appInsights.client;
+//client.trackException(new Error("handled exceptions can be logged with this method"));
+
 //var { app, BrowserWindow } = require('electron')
 // OR
 // Three Lines
@@ -23,13 +28,13 @@ var BrowserWindow = electron.BrowserWindow;
 
 var mainWindow = null;
 app1.commandLine.appendSwitch("ignore-certificate-errors");
-app1.on('ready', function() {    
+app1.on('ready', function() {
 	mainWindow = new BrowserWindow({ width: 700, height: 650,
-					  show: true,
-                      webPreferences: {
-	                      nodeIntegration: false,
-                          webSecurity: false
-                      }
+		show: true,
+		webPreferences: {
+	  	nodeIntegration: false,
+			webSecurity: false
+			}
 		}
 	);
 	//mainWindow.openDevTools();
@@ -48,24 +53,23 @@ bus.emit('log',"Opening browser window..");
 var getConnectionString = function() {
 	fs.readFile(file, 'utf-8', function (err,data) {
 	  if (err) {
-		 console.log("Connection String Does Not Exists !!");
-		 bus.emit('log',"Connection String Does Not Exists !!");
-		 console.log("Please Login !!");
-		 bus.emit('log',"Please Login !!");
-		 console.log("open url 'http://localhost:65159/' in browser");
-		 bus.emit('log',"Please Login !");
+			console.log("Connection String Does Not Exists !!");
+			bus.emit('log',"Connection String Does Not Exists !!");
+			console.log("Please Login !!");
+			bus.emit('log',"Please Login !!");
+			//console.log("open url 'http://localhost:65159/' in browser");
+			//bus.emit('log',"Please Login !");
 		 
 		  console.log(err);
 	  } else {
-		console.log("Connection String Exists !!");
-		bus.emit('log',"Connection String Exists !!");
-		require('./main');
+			console.log("Connection String Exists !!");
+			bus.emit('log',"Connection String Exists !!");
+			require('./main');
 	  }
 	});
 }
 
 setTimeout(getConnectionString, 7000);
-
 
 // Define the port to run on
 app.set('port', 65159);
@@ -94,7 +98,7 @@ app.post('/connectionstring', function (req, res) {
 	fs.writeFileSync('./connectionString.txt', connectionString , 'utf-8');
 
 	require('./main');
-  	res.sendStatus(200);
+  res.sendStatus(200);
 })
 app.post('/capabilities', function (req, res) {
 	//console.log(req.body);
@@ -103,7 +107,40 @@ app.post('/capabilities', function (req, res) {
 	fs.writeFileSync('./capabilities.json', capabilities , 'utf-8');
 
 	//require('./main');
-  	res.sendStatus(200);
+  res.sendStatus(200);
+})
+
+function deleteFiles(files, callback){
+  var i = files.length;
+  files.forEach(function(filepath){
+	  
+	console.log("deleting "+ filepath);
+    fs.unlink(filepath, function(err) {
+      i--;
+      if (err) {
+        callback(err);
+        return;
+      } else if (i <= 0) {
+        callback(null);
+      }
+    });
+  });
+}
+
+app.get('/resetgateway', function (req, res) {
+	console.log("resetgateway api call");
+	
+	var files = ['./connectionString.txt', './capabilities.json', './sensorlist.json','./sensorTypes.json'];
+
+	deleteFiles(files, function(err) {
+		if (err) {
+			console.log(err);
+			client.trackException(err);
+		} else {
+			console.log('all files removed');
+		}
+	});
+	res.sendStatus(200);
 })
 
 var server = app.listen(app.get('port'), function() {
@@ -112,7 +149,10 @@ var server = app.listen(app.get('port'), function() {
 });
 
 getmac.getMac(function(err,macAddress){
-    if (err)  throw err
+    if (err) {
+			client.trackException(err);
+			throw err;
+		}
     console.log(macAddress);
-	MAC = macAddress;
+		MAC = macAddress;
 })
