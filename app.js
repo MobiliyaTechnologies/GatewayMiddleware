@@ -13,10 +13,11 @@ var bus = require('./eventbus');
 //var open = require('opn');
 var cors = require('cors');
 
+console.log("Creating app insights client");
 let appInsights = require('applicationinsights');
-appInsights.setup("_your_ikey_").start();
+appInsights.setup("37feed53-76b6-44a9-b877-d0469f3743fb").start();
 let client = appInsights.client;
-//client.trackException(new Error("handled exceptions can be logged with this method"));
+//client.trackException(new Error("handled exceptions on Gateway"));
 
 //var { app, BrowserWindow } = require('electron')
 // OR
@@ -130,8 +131,9 @@ function deleteFiles(files, callback){
 app.get('/resetgateway', function (req, res) {
 	console.log("resetgateway api call");
 	
+	bus.emit('stopGateway');
 	var files = ['./connectionString.txt', './capabilities.json', './sensorlist.json','./sensorTypes.json'];
-
+	
 	deleteFiles(files, function(err) {
 		if (err) {
 			console.log(err);

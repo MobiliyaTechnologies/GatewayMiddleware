@@ -62,6 +62,19 @@ var azureClientDisconnected = function () {
 	clearTimeout(startScanningIntervalFunction);
 }
 
+var stopGateway = function () {
+	IsAzureClientConnected = false;
+	console.log("Stop Gateway");
+	stopScanning();
+	setTimeout(startAzureClient, 60000);
+	clearTimeout(startScanningIntervalFunction);
+
+	CloudAdapterInstance.AzureStop(function (){
+		console.log("Azure client stopped");
+		bus.emit('log', 'Azure client stopped');
+	});
+}
+
 var startAzureClient = function initAzureClinet() {
 	// call the particular cloud init process
 	CloudAdapterInstance.AzureInit(function (){
@@ -225,6 +238,7 @@ bus.on('updatelist', myUpdateEventHandler);
 bus.on('updateSensorTypes', updateSensorTypesHandler);
 bus.on('connected', sensorConnectedHandler);
 bus.on('azureClientDisconnected', azureClientDisconnected);
+bus.on('stopGateway', stopGateway);
 
 function stopScanning() {
 	isScanningStarted = false;
