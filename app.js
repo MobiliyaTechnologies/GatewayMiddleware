@@ -142,6 +142,8 @@ app.get('/resetgateway', function (req, res) {
 			console.log('all files removed');
 		}
 	});
+	
+	bus.emit('log', '\n--------------------------\nGateway has been reset.\nPlease Restart Gateway !!!\n--------------------------\n');
 	res.sendStatus(200);
 })
 

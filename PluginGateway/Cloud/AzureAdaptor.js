@@ -58,6 +58,10 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 			}
 			console.log(data);
 			connectionString = data;
+
+			if(connectionString === undefined || connectionString == null || connectionString == "") {
+				return;
+			}
 			
 			//connectionString = "HostName=AssetIOTHub.azure-devices.net;DeviceId=mySecondDevice;SharedAccessKey=lHwO1mM76ApXn3bGtsN8vQcY3UMSM0w/IrlyjTzpWjk=";
 			
