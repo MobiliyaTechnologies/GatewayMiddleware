@@ -1,5 +1,7 @@
 # Gateway Middleware:
-	This project will include middleware solution which would be running on the Gateway Hardware. This will include all the high level Details:
+	This project will include middleware solution which would be running on the Gateway Hardware.
+	This middleware will connect to sensors and pass sensor data to IoT hub.
+
 ## Supported Hardware
 - Dell Gateway
 
