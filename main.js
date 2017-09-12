@@ -109,10 +109,21 @@ function updateSensorList() {
 			whitelistAddressAll = Object.keys(fileData);
 			whitelistContentAll = fileData;
 			console.log("Following whitelisted addresses found :",whitelistAddressAll);
-			if(whitelistAddressAll != undefined && whitelistAddressAll != null && whitelistAddressAll.length > 0 && isScanningStarted == false) {
-				startScanning();	
+			if(whitelistAddressAll != undefined && whitelistAddressAll != null && whitelistAddressAll.length > 0) {
+				//start if whitelisted sensor available
+				if(isScanningStarted == false) {
+					console.log("start scanning G");
+					startScanning();
+				} else {
+					//scanning will restart after stopping
+					console.log("restart scanning G");
+					stopScanning();
+					startScanning();
+				}
 			} else if(whitelistAddressAll == undefined || whitelistAddressAll == null || whitelistAddressAll.length <= 0){
+				//stop scanning if not whitelisted sensor available
 				if(isScanningStarted == true){
+					console.log("stop scanning G");
 					stopScanning();
 				}
 				console.log("Whitelisted sensor list not available");	
