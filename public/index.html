@@ -22,6 +22,7 @@
 		  -->
 		  <div style="margin-top:10px;margin-bottom:10px;width=50" >
 			  <button style="height:30px;width:150px" ng-click = "submit('click')" >Submit</button>
+			  <button style="height:30px;width:150px;margin-left:50px" ng-click = "reset('click')" >Reset Gateway</button>
 		 	  <div ng-show="loader.loading"  >Signing in... Please wait.</div>
 		  </div>
 		 <br>
@@ -156,10 +157,9 @@
          mainApp.controller('mainController', function($scope,aadService,$http,$websocket){ 
 			 $scope.gatewayMac="Loading.."
              $scope.gatewayVersion = "Loading..";
+             $scope.loginAttempt = 0;
 			 $scope.loader = { 
-
-              loading : false
-
+                loading : false
              };
 			 
 			 document.getElementById("logDiv").readOnly = true;
@@ -186,7 +186,8 @@
             return session && session.access_token && session.expires > currentTime;
         };
 		 $scope.submit=function(state){
-			 
+             console.log("Logging in ...");
+			  $scope.loginAttempt = $scope.loginAttempt + 1;
 			  $scope.loader.loading = true;
 				localStorage.setItem("restServer", $scope.config.restServer);
                 //localStorage.setItem("b2cApplicationId", $scope.config.b2cApplicationId);
@@ -204,6 +205,17 @@
 				$scope.aadLogin(state);
 				*/
 		   }
+           $scope.reset=function() {
+					$http({
+                        url: 'http://localhost:65159/resetgateway',
+                        method: 'GET',
+                    }).then(function (response) {
+                        console.log(response);
+						alert("Successfully Reset Gateway !");
+                    }).catch(function (error) {
+                        alert("Failed to reset Gateway");    
+                    });
+           }
 		   $scope.getConnectionStr=function(mac){
 				//mac='"f4:8e:38:d0:80:c8"';
 			    mac='"'+mac+'"';
@@ -353,11 +365,19 @@
 						script.setAttribute('src', './aadb2c.js');
 						document.head.appendChild(script);
 						$scope.aadLogin(state);
+                        $scope.loginAttempt = 0;
 					
                     }).catch(function (error) {
+                            console.log("Login Failed *** ", $scope.loginAttempt);
                             console.log("Login Details API Error :: ",error);
-                            alert("Could not login, please try again !");
-                            $scope.loader.loading = false;
+                            if($scope.loginAttempt === 1) {
+                                console.log("Second Attempt to Login...");
+                                $scope.submit('click');
+                            } else {
+                                console.log("Could not login, please try again !");
+                                alert("Could not login, please try again !");
+                                $scope.loader.loading = false;
+                            }
                     });
 			}
 			
@@ -406,6 +426,7 @@
 				aadService.signIn($scope.config,function (b2cSession) {
 					if (!online(b2cSession) && state == 'click') {
 						aadService.policyLogin(helloNetwork.adB2CSignIn, loginDisplayType.Page);
+                        //alert("at aadService.policyLogin");
 					}
 					else if (online(b2cSession)) {
 						//getUserDetails();

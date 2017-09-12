@@ -42,6 +42,9 @@ var isScanningStarted = false;
 var startedBLEApp = 0;
 var startScanningIntervalFunction;
 
+let appInsights = require('applicationinsights');
+let client = appInsights.client;
+
 //Create an event handler:
 var myUpdateEventHandler = function () {
 	  updateSensorList();
@@ -57,6 +60,19 @@ var azureClientDisconnected = function () {
 	stopScanning();
 	setTimeout(startAzureClient, 60000);
 	clearTimeout(startScanningIntervalFunction);
+}
+
+var stopGateway = function () {
+	IsAzureClientConnected = false;
+	console.log("Stop Gateway");
+	stopScanning();
+	setTimeout(startAzureClient, 60000);
+	clearTimeout(startScanningIntervalFunction);
+
+	CloudAdapterInstance.AzureStop(function (){
+		console.log("Azure client stopped");
+		bus.emit('log', 'Azure client stopped');
+	});
 }
 
 var startAzureClient = function initAzureClinet() {
@@ -93,10 +109,21 @@ function updateSensorList() {
 			whitelistAddressAll = Object.keys(fileData);
 			whitelistContentAll = fileData;
 			console.log("Following whitelisted addresses found :",whitelistAddressAll);
-			if(whitelistAddressAll != undefined && whitelistAddressAll != null && whitelistAddressAll.length > 0 && isScanningStarted == false) {
-				startScanning();	
+			if(whitelistAddressAll != undefined && whitelistAddressAll != null && whitelistAddressAll.length > 0) {
+				//start if whitelisted sensor available
+				if(isScanningStarted == false) {
+					console.log("start scanning G");
+					startScanning();
+				} else {
+					//scanning will restart after stopping
+					console.log("restart scanning G");
+					stopScanning();
+					startScanning();
+				}
 			} else if(whitelistAddressAll == undefined || whitelistAddressAll == null || whitelistAddressAll.length <= 0){
+				//stop scanning if not whitelisted sensor available
 				if(isScanningStarted == true){
+					console.log("stop scanning G");
 					stopScanning();
 				}
 				console.log("Whitelisted sensor list not available");	
@@ -165,6 +192,7 @@ var peripheralDisconnectHandler = function() {
     	    if(error) {
 	    	    console.log(this.uuid + " Disconnect error MAIN");
 		        console.log(error);
+				client.trackException(error);
 		    } else {
 			    console.log(this.uuid + " Disconnect handler MAIN");
 		    }
@@ -221,6 +249,7 @@ bus.on('updatelist', myUpdateEventHandler);
 bus.on('updateSensorTypes', updateSensorTypesHandler);
 bus.on('connected', sensorConnectedHandler);
 bus.on('azureClientDisconnected', azureClientDisconnected);
+bus.on('stopGateway', stopGateway);
 
 function stopScanning() {
 	isScanningStarted = false;
@@ -279,6 +308,7 @@ function startScanning() {
 		bus.emit('log',"Please enable bluetooth and Try Again !");
 		console.log("Error in start Scanning");
 		console.log(error);
+		client.trackException(error);
 		IsBluetoothPoweredOn = false;
 		console.log("BLEApp clear HandleQueueInterval");
 		clearInterval(HandleQueueInterval);

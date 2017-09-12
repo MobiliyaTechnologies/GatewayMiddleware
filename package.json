@@ -4,6 +4,7 @@
   "description": "The pluggable gateway app to connect to various low range protocol sensors to internet",
   "main": "app.js",
   "dependencies": {
+    "applicationinsights": "^0.21.0",
     "azure-event-hubs": "0.0.8",
     "azure-iot-device": "^1.1.14",
     "azure-iot-device-mqtt": "^1.1.14",
