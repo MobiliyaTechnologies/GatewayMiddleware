@@ -1,0 +1,48 @@
+{
+  "name": "gateway-middleware",
+  "version": "1.0.0",
+  "description": "The pluggable gateway app to connect to various low range protocol sensors to internet",
+  "main": "app.js",
+  "dependencies": {
+    "applicationinsights": "^0.21.0",
+    "azure-event-hubs": "0.0.8",
+    "azure-iot-device": "^1.1.14",
+    "azure-iot-device-mqtt": "^1.1.14",
+    "azure-iothub": "^1.1.11",
+    "body-parser": "^1.17.2",
+    "collections": "^5.0.6",
+    "cors": "^2.8.4",
+    "electron": "^1.4.3",
+    "electron-packager": "^8.1.0",
+    "events": "^1.1.1",
+    "express": "^4.15.3",
+    "getmac": "^1.2.1",
+    "jsonfile": "^3.0.0",
+    "kafka-node": "^1.5.0",
+    "moment-timezone": "^0.5.11",
+    "noble": "^1.8.0",
+    "opn": "^5.1.0",
+    "ws": "^3.0.0"
+  },
+  "scripts": {
+    "main": "app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://scm.agreeyamobility.net:8443/Intel/gateway-middleware.git"
+  },
+  "keywords": [
+    "gateway",
+    "plugin",
+    "iot"
+  ],
+  "author": "tarun.navadia@mobiliya.com",
+  "license": "ISC",
+  "devDependencies": {
+    "app": "^0.1.0",
+    "electron": "^1.6.11",
+    "electron-packager": "^8.7.2",
+    "electron-prebuilt": "^1.4.13",
+    "electron-rebuild": "^1.6.0"
+  }
+}

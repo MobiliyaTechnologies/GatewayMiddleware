@@ -1,0 +1,482 @@
+<html>
+   
+   <head>
+      <title>Asset Monitoring Configuration</title>
+      <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+	  <script src = "hello.all.js"></script>
+	   <script src="ng-websocket.js"></script>
+   </head>
+   
+   <body>	
+	   
+      <div style="margin-left:20px;" ng-app = "gatewayApp" ng-controller = "mainController">
+		<h2>Asset Monitoring Configuration</h2>
+
+		  
+		     <p>Gateway: {{gatewayMac}}</p>
+		     <p>Version: {{gatewayVersion}}</p>
+         Enter Rest Server Url: <input style="width:450px" type = "text" ng-model = "config.restServer"><br><br>
+       <!--  Enter B2c Application Id: <input type = "text" ng-model = "config.b2cApplicationId"><br>
+		 Enter B2c Tenant Name: <input type = "text" ng-model = "config.tenantName"><br>
+		 Enter B2c Sign In Policy: <input type = "text" ng-model = "config.signInPolicyName"><br>
+		  -->
+		  <div style="margin-top:10px;margin-bottom:10px;width=50" >
+			  <button style="height:30px;width:150px" ng-click = "submit('click')" >Submit</button>
+			  <button style="height:30px;width:150px;margin-left:50px" ng-click = "reset('click')" >Reset Gateway</button>
+		 	  <div ng-show="loader.loading"  >Signing in... Please wait.</div>
+		  </div>
+		 <br>
+         <div>
+			 <textarea id="logDiv" style="width:600px;height:350px;">{{data}}</textarea>		 
+	    <div>
+         
+      </div>
+      
+      <script>
+         var mainApp = angular.module("gatewayApp", ['ngWebsocket']);
+		  
+		
+    mainApp.run(function ($websocket) {
+    
+    });
+		  
+         mainApp.factory('aadService', function ($http) {
+        var responseType = 'token id_token';
+        var redirectURI = './redirect.html';
+        var loginDisplayType = {
+            PopUp: 'popup',
+            None: 'none',
+            Page: 'page'
+
+        };
+
+        var helloNetwork = {
+            adB2CSignIn: 'adB2CSignIn',
+            adB2CSignInSignUp: 'adB2CSignInSignUp',
+            adB2CEditProfile: 'adB2CEditProfile'
+        };
+        return {
+            signIn: function (config,callback) {
+				console.log("config",config)
+                hello.init({
+                    adB2CSignIn: config.b2cApplicationId,
+                    adB2CSignInSignUp: config.b2cApplicationId,
+                    adB2CEditProfile: config.b2cApplicationId
+                }, {
+                        redirect_uri: '/redirect.html',
+                        scope: 'openid ' + config.b2cApplicationId,
+                        response_type: 'token id_token'
+                    });
+                var b2cSession = hello(helloNetwork.adB2CSignIn).getAuthResponse();
+				console.log("b2cSession",b2cSession)
+                callback(b2cSession);
+            },
+            signUp: function (config,callback) {
+                var applicationId = config.b2cApplicationId;
+                hello.init({
+                    adB2CSignIn: applicationId,
+                    adB2CSignInSignUp: applicationId,
+                    adB2CEditProfile: applicationId
+                }, {
+                        redirect_uri: '../redirect.html',
+                        scope: 'openid ' + applicationId,
+                        response_type: 'token id_token'
+                    });
+                this.policyLogin(helloNetwork.adB2CSignInSignUp, loginDisplayType.Page);
+            },
+            logout: function () {
+                var applicationId = config.b2cApplicationId;
+                hello.init({
+                    adB2CSignIn: applicationId,
+                    adB2CSignInSignUp: applicationId,
+                    adB2CEditProfile: applicationId
+                }, {
+                        redirect_uri: '/redirect.html',
+                        scope: 'openid ' + applicationId,
+                        response_type: 'token id_token'
+                    });
+                this.policyLogout(helloNetwork.adB2CSignIn, config.signInPolicyName);
+            },
+            policyLogin: function (network, displayType) {
+				console.log("network",network);
+				console.log("displayType",displayType);
+                if (!displayType) {
+                    displayType = 'page';
+                }
+                var b2cSession = hello(network).getAuthResponse();
+				
+                //in case of silent renew, check if the session is still active otherwise ask the user to login again
+                if (!this.online(b2cSession) && displayType === loginDisplayType.None) {
+                    bootbox.alert('Session expired... please login again', function () {
+                        this.policyLogin(network, loginDisplayType.Page);
+                    });
+		  				$scope.loader.loading = false;
+                    return;
+                }
+				
+                hello(network).login({ display: displayType }, this.log).then(function (auth) {
+					
+                }, function (e) {
+					console.log("b2cSession1",b2cSession);
+                    if ('Iframe was blocked' in e.error.message) {
+                        this.policyLogin(network, loginDisplayType.Page);
+                        return;
+                    }
+                    bootbox.alert('Signin error: ' + e.error.message);
+		 			$scope.loader.loading = false;
+                });
+            },
+            policyLogout: function (network, policy) {
+                hello.logout(network, { force: true }).then(function (auth) {
+                    console.log("auth :", auth);
+                }, function (e) {
+                    console.log("Erorr :", e);
+                });
+            },
+            online: function (session) {
+                var currentTime = (new Date()).getTime() / 1000;
+                return session && session.access_token && session.expires > currentTime;
+            },
+            log: function (s) {
+
+                if (typeof s.error !== 'undefined' && s.error !== null) {
+                    if (s.error.code === 'blocked') {   //silentrenew(display: none) in case of expired token returns X-frame Options as DENY error
+                        bootbox.alert("<p class='bg-danger'>there was an error in silent renewing the token. Please login again</p>");
+		 				$scope.loader.loading = false;
+                        return;
+                    }
+                }
+                else
+                    document.body.querySelector('.response')
+                        .appendChild(document.createTextNode(JSON.stringify(s, true, 2)));
+            }
+
+
+        };
+    });
+         mainApp.controller('mainController', function($scope,aadService,$http,$websocket){ 
+			 $scope.gatewayMac="Loading.."
+             $scope.gatewayVersion = "Loading..";
+             $scope.loginAttempt = 0;
+			 $scope.loader = { 
+                loading : false
+             };
+			 
+			 document.getElementById("logDiv").readOnly = true;
+		 $scope.config={restServer:'',
+						'b2cApplicationId':'',
+            'tenantName': "",
+            'signInPolicyName': ""
+            //'signInSignUpPolicyName': ""
+			
+			} 
+		var loginDisplayType = {
+            PopUp: 'popup',
+            None: 'none',
+            Page: 'page'
+        };
+        var helloNetwork = {
+            adB2CSignIn: 'adB2CSignIn',
+            adB2CSignInSignUp: 'adB2CSignInSignUp',
+            adB2CEditProfile: 'adB2CEditProfile'
+        };
+		 function online(session) {
+
+            var currentTime = (new Date()).getTime() / 1000;
+            return session && session.access_token && session.expires > currentTime;
+        };
+		 $scope.submit=function(state){
+             console.log("Logging in ...");
+			  $scope.loginAttempt = $scope.loginAttempt + 1;
+			  $scope.loader.loading = true;
+				localStorage.setItem("restServer", $scope.config.restServer);
+                //localStorage.setItem("b2cApplicationId", $scope.config.b2cApplicationId);
+                //localStorage.setItem("tenantName", $scope.config.tenantName);
+                //localStorage.setItem("signInPolicyName", $scope.config.signInPolicyName);
+                localStorage.setItem("signInSignUpPolicyName", $scope.config.signInSignUpPolicyName);
+				localStorage.setItem("redirect_uri", 'http://localhost:65159/redirect.html');
+				
+				$scope.getLoginDetails(state);
+				
+				/*var script = document.createElement('script');
+                script.setAttribute('type', 'text/javascript');
+                script.setAttribute('src', './aadb2c.js');
+                document.head.appendChild(script);
+				$scope.aadLogin(state);
+				*/
+		   }
+           $scope.reset=function() {
+					$http({
+                        url: 'http://localhost:65159/resetgateway',
+                        method: 'GET',
+                    }).then(function (response) {
+                        console.log(response);
+						alert("Successfully Reset Gateway !");
+                    }).catch(function (error) {
+                        alert("Failed to reset Gateway");    
+                    });
+           }
+		   $scope.getConnectionStr=function(mac){
+				//mac='"f4:8e:38:d0:80:c8"';
+			    mac='"'+mac+'"';
+			    console.log("MAC Address ::",mac);			   
+			    var authResponse = hello('adB2CSignIn').getAuthResponse();
+                if (authResponse != null) {
+				$http({
+                        url: $scope.config.restServer + 'api/IotHubGateway',
+                        dataType: 'json',
+                        method: 'POST',
+						data:mac,
+                        headers: {
+                            "Content-Type": "application/json",
+                           "Authorization": authResponse.token_type + ' ' + authResponse.access_token,
+                        }
+                    }).then(function (response) {
+                        console.log("Connection String ::",response);
+						$scope.saveCapabilityUnits(response.data.Capabilities);
+						$scope.saveConnectionStr(response.data.DeviceConnectionString);
+                    })
+                        .catch(function (error) {
+                            console.log("Connection String Error ::",error);
+                            alert("Something went wrong, please check registered GatewayId. [" + error.statusText + "]!\nPlease SignIn again.");
+                        });
+
+                }
+                else {
+                    console.log("Please login");
+                    
+                } 
+		   
+		   }
+		   $scope.saveConnectionStr=function(constr){
+		   
+					$http({
+                        url: 'http://localhost:65159/connectionstring',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'connectionString':constr},
+                        headers: {
+                            "Content-Type": "application/json",
+                          
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+						alert("Successfully stored connection string !");
+		 			   $scope.loader.loading = false;
+                    })
+                        .catch(function (error) {
+		 					 $scope.loader.loading = false;
+                            
+                        });
+		   }
+		   $scope.saveCapabilityUnits=function(capabilities){
+		   
+					$http({
+                        url: 'http://localhost:65159/capabilities',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'capabilities':JSON.stringify(capabilities)},
+                        headers: {
+                            "Content-Type": "application/json",
+                          
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+						alert("Successfully stored capabilities !");
+                    })
+                        .catch(function (error) {
+                            
+                        });
+		   }
+		   $scope.saveCapabilityUnits=function(capabilities){
+		   
+					$http({
+                        url: 'http://localhost:65159/capabilities',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'capabilities':JSON.stringify(capabilities)},
+                        headers: {
+                            "Content-Type": "application/json",
+                          
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+						alert("Successfully stored capabilities !");
+                    })
+                        .catch(function (error) {
+                            
+                        });
+		   }
+			$scope.getMacAddr=function(){
+			
+			  $http({
+                        url: 'http://localhost:65159/macaddress',
+                        dataType: 'json',
+                        method: 'GET',
+                        headers: {
+                            "Content-Type": "application/json",
+                          
+                        }
+                    }).then(function (response) {
+                       
+						$scope.getConnectionStr(response.data);
+				  		/*setTimeout(function(){
+							$scope.getConnectionStr(response.data);
+						},3000);
+						*/
+                    })
+                        .catch(function (error) {
+                            
+                        });
+
+			}
+			
+			$scope.getLoginDetails=function(state){
+			
+				url=$scope.config.restServer;
+				console.log("url :: " + url);
+				if(url == undefined || url == null || url =="") {
+					alert("Please enter valid server url.");
+					return;
+				}
+				
+			    console.log("RestServer URL ::",url);			   
+			    $http({
+                        url: 'http://assetmonitoring.azurewebsites.net/api/GetB2cConfiguration',
+                        dataType: 'json',
+                        method: 'GET'
+                    }).then(function (response) {
+                        console.log("Login Details :: ", response);
+						//$scope.saveCapabilityUnits(response.data.Capabilities);
+						console.log("response.data.B2cClientId " + response.data.B2cClientId);
+						console.log("response.data.B2cTenant " + response.data.B2cTenant);
+						console.log("response.data.B2cSignUpInPolicyId " + response.data.B2cSignUpInPolicyId);
+						localStorage.setItem("b2cApplicationId", response.data.B2cClientId);
+						localStorage.setItem("tenantName", response.data.B2cTenant);
+						localStorage.setItem("signInPolicyName", response.data.B2cSignUpInPolicyId);
+						
+						/*$scope.config.restServer=localStorage.getItem("restServer");
+						$scope.config.b2cApplicationId=localStorage.getItem("b2cApplicationId");
+						$scope.config.tenantName=localStorage.getItem("tenantName");
+						$scope.config.signInPolicyName=localStorage.getItem("signInPolicyName");
+						*/
+						var script = document.createElement('script');
+						script.setAttribute('type', 'text/javascript');
+						script.setAttribute('src', './aadb2c.js');
+						document.head.appendChild(script);
+						$scope.aadLogin(state);
+                        $scope.loginAttempt = 0;
+					
+                    }).catch(function (error) {
+                            console.log("Login Failed *** ", $scope.loginAttempt);
+                            console.log("Login Details API Error :: ",error);
+                            if($scope.loginAttempt === 1) {
+                                console.log("Second Attempt to Login...");
+                                $scope.submit('click');
+                            } else {
+                                console.log("Could not login, please try again !");
+                                alert("Could not login, please try again !");
+                                $scope.loader.loading = false;
+                            }
+                    });
+			}
+			
+			$scope.showMacAddr=function(){
+				//console.log("$scope.gatewayMac", $scope.gatewayMac);
+			  $http({
+                        url: 'http://localhost:65159/macaddress',
+                        dataType: 'json',
+                        method: 'GET',
+                        headers: {
+                            "Content-Type": "application/json",
+                          
+                        }
+                    }).then(function (response) {
+				  		console.log("$scope.gatewayMac response: ", response.data);
+						$scope.gatewayMac = response.data;
+				  console.log("$scope.gatewayMac response: ", $scope.gatewayMac);
+				  		//$scope.$apply();
+                    })
+                        .catch(function (error) {
+                            console.log("$scope.gatewayMac error: ", error);
+                        });
+			}
+			
+			$scope.showVersion=function(){
+				//console.log("$scope.gatewayMac", $scope.gatewayMac);
+			  $http({
+                        url: 'http://localhost:65159/version',
+                        dataType: 'json',
+                        method: 'GET',
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    }).then(function (response) {
+				  		console.log("$scope.gatewayVersion response: ", response.data);
+						$scope.gatewayVersion = response.data;
+				        console.log("$scope.gatewayVersion response: ", $scope.gatewayVersion);
+                    })
+                        .catch(function (error) {
+                            console.log("$scope.gatewayVersion error: ", error);
+                        });
+			}
+
+			$scope.aadLogin=function(state){
+			
+				aadService.signIn($scope.config,function (b2cSession) {
+					if (!online(b2cSession) && state == 'click') {
+						aadService.policyLogin(helloNetwork.adB2CSignIn, loginDisplayType.Page);
+                        //alert("at aadService.policyLogin");
+					}
+					else if (online(b2cSession)) {
+						//getUserDetails();
+						console.log("Heree");
+						$scope.getMacAddr();
+					}
+				});      
+			}
+			
+			
+			$scope.getConfig=function(){
+			
+				$scope.config.restServer=localStorage.getItem("restServer");
+                $scope.config.b2cApplicationId=localStorage.getItem("b2cApplicationId");
+                $scope.config.tenantName=localStorage.getItem("tenantName");
+                $scope.config.signInPolicyName=localStorage.getItem("signInPolicyName");
+                /*if($scope.config.restServer){
+					$scope.aadLogin('intial');
+				}*/
+			
+			}
+			
+			$scope.getConfig();
+			$scope.showMacAddr();
+			$scope.showVersion(); 
+			 
+			 
+			     var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
+		$scope.data='Initializing Asset Tracking & Monitoring\nPlease Wait\n';
+        ws.$on('$open', function () {
+            console.log('Oh my gosh, websocket is really open!  awesome!');
+			
+			//ws.$emit('ping', 'hi listening websocket server'); // send a message to the websocket server
+        });
+		ws.$on('$message', function (data) {
+            //console.log('The websocket server has sent the following data:');
+            console.log(data);
+			$scope.data=$scope.data+data+'\n';
+			$scope.$apply();
+			var elmnt = document.getElementById("logDiv");
+		    elmnt.scrollTop = elmnt.scrollHeight;
+            //ws.$close();
+        });
+		
+        ws.$on('$close', function () {
+            console.log('Websocket Server Closed !');
+        });
+         });
+		 
+      </script>
+      
+   </body>
+</html>
