@@ -34,6 +34,7 @@ var Capabilities;
 var SensorCapabilities;
 var SimultaneousBLEConnections = config.SimultaneousBLEConnections;
 var BLEConnectionDuration = config.BLEConnectionDuration;
+var BLEReconnectionInterval = config.BLEReconnectionInterval;
 var disconnectHandler;
 var disconnectHandlerCalled = 0;
 var IsBluetoothPoweredOn = true;
@@ -280,7 +281,7 @@ function startScanning() {
 				
 					if (config.ContinuousBLEConnection === 0) {
 						console.log("onStateChange HandleQueueInterval");
-						HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
+						HandleQueueInterval = setInterval(HandleQueue, BLEReconnectionInterval);
 					}
 				}
 			} else {
@@ -301,7 +302,7 @@ function startScanning() {
 
 		if (config.ContinuousBLEConnection === 0) {
 			console.log("startScanning - HandleQueueInterval");
-			HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
+			HandleQueueInterval = setInterval(HandleQueue, BLEReconnectionInterval);
 		}
 	} catch(error) {
 		console.log("Please enable bluetooth and Try Again !");
@@ -396,7 +397,7 @@ function BLEApp () {
 		//clearPeripheralList
 		PeripheralList.clear();
 		
-        console.log("Scanning to start soon in " + config.BLEReconnectionInterval + " ms");
+        console.log("Scanning to start soon in " + BLEReconnectionInterval + " ms");
 		if(IsBluetoothPoweredOn && IsAzureClientConnected) {
 			clearTimeout(startScanningIntervalFunction);
 			if(whitelistAddressAll!=undefined && whitelistAddressAll!=null && whitelistAddressAll.length>0) {
@@ -406,10 +407,14 @@ function BLEApp () {
 						console.log("ScanningStopped => ScanningStarted");
 						bus.emit('log',"ScanningStarted");
 					}
-				}, config.BLEReconnectionInterval);
+				}, BLEReconnectionInterval);
 				//}, 1000);
 			}
 		}
+        if (config.BLEConnectionDuration != BLEConnectionDuration) {
+            BLEConnectionDuration = config.BLEConnectionDuration;
+            BLEReconnectionInterval = config.BLEReconnectionInterval;
+        }
 	});
 
 };
@@ -551,6 +556,14 @@ var Geolocation_DS = new SensorDataStructure();
 var Geolocation_CloudAdaptor = new CloudAdaptor();
 var Geolocation_Handle = new Geolocation();
 Geolocation_Handle.GeolocationHandler(Geolocation_CloudAdaptor.AzureHandle,Geolocation_DS.JSON_data,BLEConnectionDuration);
+
+fs.readFile('./connectionTimeout.txt', 'utf8', function (err,data) {
+    if (!err) {
+        BLEConnectionDuration = data;
+        config.BLEConnectionDuration = BLEConnectionDuration;
+        config.BLEReconnectionInterval = config.BLEConnectionDuration + 500;
+    }
+});
 
 startAzureClient();
 

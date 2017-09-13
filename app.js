@@ -92,6 +92,26 @@ app.get('/version', function (req, res) {
 	console.log( config.Version );
     res.end( config.Version );
 })
+
+app.get('/timeout', function (req, res) {
+    var config = require('./config');
+    var BLEConnectionDuration = config.BLEConnectionDuration.toString();
+    fs.readFile('./connectionTimeout.txt', 'utf8', function (err,data) {
+        if (!err) {
+            BLEConnectionDuration = data;
+        }
+        res.end(BLEConnectionDuration);
+    });
+});
+
+app.post('/timeout', function (req, res) {
+	var config = require('./config');
+    config.BLEConnectionDuration = req.body.timeout;
+    config.BLEReconnectionInterval = config.BLEConnectionDuration + 500;
+	fs.writeFileSync('./connectionTimeout.txt', config.BLEConnectionDuration, 'utf-8');
+    res.sendStatus(200);
+})
+
 app.post('/connectionstring', function (req, res) {
 	console.log(req.body);
 	connectionString = req.body.connectionString;

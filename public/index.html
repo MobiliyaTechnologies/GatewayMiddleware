@@ -16,6 +16,12 @@
 		     <p>Gateway: {{gatewayMac}}</p>
 		     <p>Version: {{gatewayVersion}}</p>
          Enter Rest Server Url: <input style="width:450px" type = "text" ng-model = "config.restServer"><br><br>
+        Enter timeout (ms) : <select id="timeout" ng-model="config.timeout">
+        <option value=3500>3500</option>
+        <option value=5500>5500</option>
+        <option value=7500>7500</option>
+        <option value=8500>8500</option>
+        </select>
        <!--  Enter B2c Application Id: <input type = "text" ng-model = "config.b2cApplicationId"><br>
 		 Enter B2c Tenant Name: <input type = "text" ng-model = "config.tenantName"><br>
 		 Enter B2c Sign In Policy: <input type = "text" ng-model = "config.signInPolicyName"><br>
@@ -163,10 +169,11 @@
              };
 			 
 			 document.getElementById("logDiv").readOnly = true;
-		 $scope.config={restServer:'',
+		     $scope.config={restServer:'',
+                        'timeout' : '8500',
 						'b2cApplicationId':'',
-            'tenantName': "",
-            'signInPolicyName': ""
+             'tenantName': "",
+             'signInPolicyName': ""
             //'signInSignUpPolicyName': ""
 			
 			} 
@@ -195,7 +202,7 @@
                 //localStorage.setItem("signInPolicyName", $scope.config.signInPolicyName);
                 localStorage.setItem("signInSignUpPolicyName", $scope.config.signInSignUpPolicyName);
 				localStorage.setItem("redirect_uri", 'http://localhost:65159/redirect.html');
-				
+			    $scope.saveTimeout($scope.config.timeout);
 				$scope.getLoginDetails(state);
 				
 				/*var script = document.createElement('script');
@@ -248,6 +255,22 @@
                 } 
 		   
 		   }
+		   $scope.saveTimeout=function(timeout){
+					$http({
+                        url: 'http://localhost:65159/timeout',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'timeout':timeout},
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+		 			   $scope.loader.loading = false;
+                    }).catch(function (error) {
+		 			    $scope.loader.loading = false;
+                    });
+           }
 		   $scope.saveConnectionStr=function(constr){
 		   
 					$http({
@@ -401,6 +424,28 @@
                             console.log("$scope.gatewayMac error: ", error);
                         });
 			}
+
+            $scope.showTimeout=function() {
+                $http({
+                        url: 'http://localhost:65159/timeout',
+                        dataType: 'json',
+                        method: 'GET',
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                      }).then(function(response) {
+                        var timeSelect = document.getElementById('timeout');
+                        $scope.config.timeout = response.data;
+                        for(var i, j = 0; i = timeSelect.options[j]; j++) {
+                            if(i.value == response.data) {
+                                timeSelectSelect.selectedIndex = j;
+                                break;
+                            }
+                        }
+                      }).catch(function(response) {
+                        console.log("Error getting connectionTimeout value : ", error);
+                      });
+            }
 			
 			$scope.showVersion=function(){
 				//console.log("$scope.gatewayMac", $scope.gatewayMac);
@@ -452,13 +497,13 @@
 			$scope.getConfig();
 			$scope.showMacAddr();
 			$scope.showVersion(); 
+			$scope.showTimeout();
 			 
 			 
 			     var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
 		$scope.data='Initializing Asset Tracking & Monitoring\nPlease Wait\n';
         ws.$on('$open', function () {
             console.log('Oh my gosh, websocket is really open!  awesome!');
-			
 			//ws.$emit('ping', 'hi listening websocket server'); // send a message to the websocket server
         });
 		ws.$on('$message', function (data) {

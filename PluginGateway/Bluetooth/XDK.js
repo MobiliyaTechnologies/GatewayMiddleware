@@ -139,14 +139,16 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 						}
 						//GroupId:SensorDetails.GroupId,
 						
-						// formatting data in m/s square in SI units
-						var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-										AssetBarcode:SensorDetails.AssetBarcode,x:(Math.floor(parseInt(data.split(' ')[0])/430)),y:(Math.floor(parseInt(data.split(' ')[1])/430)),z:(Math.floor(parseInt(zValue)/430))};
+                        if (data.split(' ')[0] != 'X' && data.split(' ')[1] != 'Y' && zValue != 'Z') {
+						    // formatting data in m/s square in SI units
+						    var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capId,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+							AssetBarcode:SensorDetails.AssetBarcode,x:(Math.floor(parseInt(data.split(' ')[0])/430)),y:(Math.floor(parseInt(data.split(' ')[1])/430)),z:(Math.floor(parseInt(zValue)/430))};
 
-						// the value can be scaled as per the requirement by editing the above line 
-						//var json_XYZ = {x:data.split(' ')[0],y:data.split(' ')[1],z:zValue}// formatting raw data 
-						console.log("XDK Accelerometer Data-- data event> ",	data.toString('utf-8'));
-						CloudAdaptor(DataWrapper(json_data));// pushing the data to cloud
+						    // the value can be scaled as per the requirement by editing the above line 
+						    //var json_XYZ = {x:data.split(' ')[0],y:data.split(' ')[1],z:zValue}// formatting raw data 
+						    console.log("XDK Accelerometer Data-- data event> ",	data.toString('utf-8'));
+						    CloudAdaptor(DataWrapper(json_data));// pushing the data to cloud
+                        }
 						//console.log(json_data);
 					});
 					//Writing data to the characteristic to start accelerometer sampling
