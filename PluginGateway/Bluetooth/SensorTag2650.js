@@ -23,7 +23,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 	
 	if(ContinuousBLEConnection===0) {
 		console.log("SetTiomout  for DisconnectHandler time ", new Date() );
-	isDisconnectHandlerCalled = false;
+		isDisconnectHandlerCalled = false;
 		disconnectHandler = setTimeout(SensorTag2650DisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
 	}
 
