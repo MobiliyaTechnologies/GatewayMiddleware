@@ -152,7 +152,7 @@ app.get('/resetgateway', function (req, res) {
 	console.log("resetgateway api call");
 	
 	bus.emit('stopGateway');
-	var files = ['./connectionString.txt', './capabilities.json', './sensorlist.json','./sensorTypes.json', './connectionTimeout.txt];
+	var files = ['./connectionString.txt', './capabilities.json', './sensorlist.json','./sensorTypes.json', './connectionTimeout.txt'];
 	
 	deleteFiles(files, function(err) {
 		if (err) {
