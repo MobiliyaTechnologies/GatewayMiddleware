@@ -135,8 +135,10 @@
             policyLogout: function (network, policy) {
                 hello.logout(network, { force: true }).then(function (auth) {
                     console.log("auth :", auth);
+                    $scope.deleteStoredFiles();
                 }, function (e) {
                     console.log("Erorr :", e);
+                    alert("Failed to reset Gateway. Please try again!");
                 });
             },
             online: function (session) {
@@ -200,7 +202,7 @@
                 //localStorage.setItem("b2cApplicationId", $scope.config.b2cApplicationId);
                 //localStorage.setItem("tenantName", $scope.config.tenantName);
                 //localStorage.setItem("signInPolicyName", $scope.config.signInPolicyName);
-                localStorage.setItem("signInSignUpPolicyName", $scope.config.signInSignUpPolicyName);
+                //localStorage.setItem("signInSignUpPolicyName", $scope.config.signInSignUpPolicyName);
 				localStorage.setItem("redirect_uri", 'http://localhost:65159/redirect.html');
 			    $scope.saveTimeout($scope.config.timeout);
 				$scope.getLoginDetails(state);
@@ -213,14 +215,17 @@
 				*/
 		   }
            $scope.reset=function() {
-					$http({
+               aadService.policyLogout(helloNetwork.adB2CSignIn, null);
+           }
+           $scope.deleteStoredFiles=function() {
+               $http({
                         url: 'http://localhost:65159/resetgateway',
                         method: 'GET',
                     }).then(function (response) {
                         console.log(response);
-						alert("Successfully Reset Gateway !");
+						alert("Successfully Reset Gateway. Please restart!");
                     }).catch(function (error) {
-                        alert("Failed to reset Gateway");    
+                        alert("Failed to reset Gateway. Please try again!");    
                     });
            }
 		   $scope.getConnectionStr=function(mac){
@@ -353,7 +358,6 @@
                         });
 
 			}
-			
 			$scope.getLoginDetails=function(state){
 			
 				url=$scope.config.restServer;
@@ -365,7 +369,7 @@
 				
 			    console.log("RestServer URL ::",url);			   
 			    $http({
-                        url: 'http://assetmonitoring.azurewebsites.net/api/GetB2cConfiguration',
+                        url: url +'api/GetB2cConfiguration',
                         dataType: 'json',
                         method: 'GET'
                     }).then(function (response) {
@@ -387,7 +391,7 @@
 						script.setAttribute('type', 'text/javascript');
 						script.setAttribute('src', './aadb2c.js');
 						document.head.appendChild(script);
-						$scope.aadLogin(state);
+                        $scope.getConfig(state);
                         $scope.loginAttempt = 0;
 					
                     }).catch(function (error) {
@@ -438,7 +442,7 @@
                         $scope.config.timeout = response.data;
                         for(var i, j = 0; i = timeSelect.options[j]; j++) {
                             if(i.value == response.data) {
-                                timeSelectSelect.selectedIndex = j;
+                                timeSelect.selectedIndex = j;
                                 break;
                             }
                         }
@@ -468,6 +472,7 @@
 
 			$scope.aadLogin=function(state){
 			
+                setTimeout (function() {
 				aadService.signIn($scope.config,function (b2cSession) {
 					if (!online(b2cSession) && state == 'click') {
 						aadService.policyLogin(helloNetwork.adB2CSignIn, loginDisplayType.Page);
@@ -479,46 +484,46 @@
 						$scope.getMacAddr();
 					}
 				});      
+                }, 1000);
 			}
 			
 			
-			$scope.getConfig=function(){
+			$scope.getConfig=function(state){
 			
 				$scope.config.restServer=localStorage.getItem("restServer");
                 $scope.config.b2cApplicationId=localStorage.getItem("b2cApplicationId");
                 $scope.config.tenantName=localStorage.getItem("tenantName");
                 $scope.config.signInPolicyName=localStorage.getItem("signInPolicyName");
-                /*if($scope.config.restServer){
-					$scope.aadLogin('intial');
-				}*/
+                if($scope.config.restServer){
+					$scope.aadLogin(state);
+				}
 			
 			}
 			
-			$scope.getConfig();
+			$scope.getConfig('intial');
 			$scope.showMacAddr();
 			$scope.showVersion(); 
 			$scope.showTimeout();
 			 
-			 
-			     var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
-		$scope.data='Initializing Asset Tracking & Monitoring\nPlease Wait\n';
-        ws.$on('$open', function () {
-            console.log('Oh my gosh, websocket is really open!  awesome!');
-			//ws.$emit('ping', 'hi listening websocket server'); // send a message to the websocket server
-        });
-		ws.$on('$message', function (data) {
-            //console.log('The websocket server has sent the following data:');
-            console.log(data);
-			$scope.data=$scope.data+data+'\n';
-			$scope.$apply();
-			var elmnt = document.getElementById("logDiv");
-		    elmnt.scrollTop = elmnt.scrollHeight;
-            //ws.$close();
-        });
-		
-        ws.$on('$close', function () {
-            console.log('Websocket Server Closed !');
-        });
+			var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
+            $scope.data='Initializing Asset Tracking & Monitoring\nPlease Wait\n';
+            ws.$on('$open', function () {
+                console.log('Oh my gosh, websocket is really open!  awesome!');
+                //ws.$emit('ping', 'hi listening websocket server'); // send a message to the websocket server
+            });
+            ws.$on('$message', function (data) {
+                //console.log('The websocket server has sent the following data:');
+                console.log(data);
+                $scope.data=$scope.data+data+'\n';
+                $scope.$apply();
+                var elmnt = document.getElementById("logDiv");
+                elmnt.scrollTop = elmnt.scrollHeight;
+                //ws.$close();
+            });
+            
+            ws.$on('$close', function () {
+                console.log('Websocket Server Closed !');
+            });
          });
 		 
       </script>
