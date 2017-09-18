@@ -46,7 +46,7 @@
     
     });
 		  
-         mainApp.factory('aadService', function ($http) {
+         mainApp.factory('aadService', function ($http,$rootScope) {
         var responseType = 'token id_token';
         var redirectURI = './redirect.html';
         var loginDisplayType = {
@@ -138,7 +138,13 @@
                     $scope.deleteStoredFiles();
                 }, function (e) {
                     console.log("Erorr :", e);
-                    alert("Failed to reset Gateway. Please try again!");
+                    if(e.error.code == "invalid_session") {
+                        console.log("invalid_session");
+                        alert("Failed to reset Gateway. invalid_session!");
+                        $rootScope.$broadcast('invalid_session', '');
+                    } else {
+                        alert("Failed to reset Gateway. Please try again!");
+                    }
                 });
             },
             online: function (session) {
@@ -162,7 +168,7 @@
 
         };
     });
-         mainApp.controller('mainController', function($scope,aadService,$http,$websocket){ 
+         mainApp.controller('mainController', function($scope,aadService,$http,$websocket,$rootScope){ 
 			 $scope.gatewayMac="Loading.."
              $scope.gatewayVersion = "Loading..";
              $scope.loginAttempt = 0;
@@ -217,7 +223,11 @@
            $scope.reset=function() {
                aadService.policyLogout(helloNetwork.adB2CSignIn, null);
            }
+           $rootScope.$on('invalid_session', function(event, data) {
+                   $scope.deleteStoredFiles();
+            });
            $scope.deleteStoredFiles=function() {
+               console.log("deleteStoredFiles");
                $http({
                         url: 'http://localhost:65159/resetgateway',
                         method: 'GET',
