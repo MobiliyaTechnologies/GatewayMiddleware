@@ -261,8 +261,14 @@ function stopScanning() {
 }
 
 function startScanning() {
+	console.log("startScanning");
 	//start scanning for ble services
+	if(isScanningStarted == true) {
+		console.log("already in scan mode, return !");
+		return;
+	}
 	try {
+		console.log("scan....");
 		isScanningStarted = true;
 		noble.on('stateChange', function(state) {
 			console.log("onStateChange to ", state);
@@ -272,9 +278,20 @@ function startScanning() {
 				//noble.startScanning(allowDuplicates);
 				if(IsAzureClientConnected ) {
 					setTimeout( function() { 
-						console.log("onStateChange startScanning");
-						bus.emit('log',"Start Scanning on Bluetooth ON");
-						noble.startScanning(null,allowDuplicates);
+						if (state === 'poweredOn' && state !== 'unauthorized') {
+							console.log("onStateChange startScanning");
+							bus.emit('log',"Start Scanning on Bluetooth ON");
+							try {
+								noble.startScanning(null,allowDuplicates);
+							} catch (error) {
+								console.log("Unable to start scanning for bluetooth devices. Either bluetooth is not powered on or run as root.");
+								bus.emit('log',"Unable to start scanning for bluetooth devices. Either bluetooth is not powered on or run as root.");
+								console.log(error);
+							}
+						} else {
+							IsBluetoothPoweredOn = false;
+							console.log("bluetooth state != poweredOn");
+						}
 						//BLEApp();
 					}, 2000);
 					console.log("onStateChange started scanning for BLE Devices");
