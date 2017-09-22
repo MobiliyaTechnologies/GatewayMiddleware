@@ -283,7 +283,7 @@ function startScanning() {
 	//start scanning for ble services
 	if(isScanningStarted == true) {
 		console.log("already in scan mode, return !");
-		return;
+		//return;
 	}
 	try {
 		console.log("scan....");

@@ -20,6 +20,9 @@ var bus = require('../../eventbus');
 var List = require("collections/list");
 var config = require('../../config');
 var groupList = new List();
+var lat = 0;
+var lng = 0;
+var lastSentTime = 0;
 
 //Add group in list:
 var addGroup = function (groupId) {
@@ -55,9 +58,20 @@ Geolocation.prototype.GeolocationHandler = function (CloudAdaptor,DataWrapper,BL
 	}
 	setInterval(function() {
 		if (groupList.length > 0) {
-			console.log("Geolocation  SENT:");
-			var json_data = {GroupIds:groupList.toArray(),Latitude:config.Latitude,Longitude:config.Longitude,Timestamp:new Date()};
-			CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+			//after every GPSDataInterval interval
+			var currentTime = new Date().getTime();
+			var sendFlag = true;
+			if(lat == config.Latitude && lng == config.Longitude && (currentTime - lastSentTime < config.GPSDataInterval)) {
+				sendFlag = false;
+			}
+			if(sendFlag) {
+				lastSentTime = new Date().getTime();
+				lat = config.Latitude;
+				lng = config.Longitude;
+				console.log("Geolocation  SENT:");
+				var json_data = {GroupIds:groupList.toArray(),Latitude:config.Latitude,Longitude:config.Longitude,Timestamp:new Date()};
+				CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+			}
 		} else {
 			//console.log("Geolocation not sent");
 		}
