@@ -518,7 +518,7 @@
 			var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
             $scope.data='Initializing Asset Tracking & Monitoring\nPlease Wait\n';
             ws.$on('$open', function () {
-                console.log('Oh my gosh, websocket is really open!  awesome!');
+                console.log('Websocket is open!');
                 //ws.$emit('ping', 'hi listening websocket server'); // send a message to the websocket server
             });
             ws.$on('$message', function (data) {
