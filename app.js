@@ -33,10 +33,15 @@ var cors = require('cors');
 
 console.log("Creating app insights client");
 let appInsights = require('applicationinsights');
-appInsights.setup("37feed53-76b6-44a9-b877-d0469f3743fb").start();
-let client = appInsights.client;
-//client.trackException(new Error("handled exceptions on Gateway"));
-
+let client;
+try {
+		appInsights.setup("37feed53-76b6-44a9-b877-d0469f3743fb").start();
+		client = appInsights.client;
+		//client.trackException(new Error("handled exceptions on Gateway"));
+} catch (error) {
+		console.log('Error in initializing appInsights client.');
+		console.log(error);
+}
 //var { app, BrowserWindow } = require('electron')
 // OR
 // Three Lines
@@ -110,6 +115,26 @@ app.get('/version', function (req, res) {
 	console.log( config.Version );
     res.end( config.Version );
 })
+
+app.get('/timeout', function (req, res) {
+    var config = require('./config');
+    var BLEConnectionDuration = config.BLEConnectionDuration.toString();
+    fs.readFile('./connectionTimeout.txt', 'utf8', function (err,data) {
+        if (!err) {
+            BLEConnectionDuration = data;
+        }
+        res.end(BLEConnectionDuration);
+    });
+});
+
+app.post('/timeout', function (req, res) {
+	var config = require('./config');
+    config.BLEConnectionDuration = req.body.timeout;
+    config.BLEReconnectionInterval = config.BLEConnectionDuration + 500;
+	fs.writeFileSync('./connectionTimeout.txt', config.BLEConnectionDuration, 'utf-8');
+    res.sendStatus(200);
+})
+
 app.post('/connectionstring', function (req, res) {
 	console.log(req.body);
 	connectionString = req.body.connectionString;
@@ -150,7 +175,7 @@ app.get('/resetgateway', function (req, res) {
 	console.log("resetgateway api call");
 	
 	bus.emit('stopGateway');
-	var files = ['./connectionString.txt', './capabilities.json', './sensorlist.json','./sensorTypes.json'];
+	var files = ['./connectionString.txt', './capabilities.json', './sensorlist.json','./sensorTypes.json', './connectionTimeout.txt'];
 	
 	deleteFiles(files, function(err) {
 		if (err) {

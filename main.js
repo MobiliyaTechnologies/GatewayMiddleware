@@ -52,6 +52,7 @@ var Capabilities;
 var SensorCapabilities;
 var SimultaneousBLEConnections = config.SimultaneousBLEConnections;
 var BLEConnectionDuration = config.BLEConnectionDuration;
+var BLEReconnectionInterval = config.BLEReconnectionInterval;
 var disconnectHandler;
 var disconnectHandlerCalled = 0;
 var IsBluetoothPoweredOn = true;
@@ -278,8 +279,14 @@ function stopScanning() {
 }
 
 function startScanning() {
+	console.log("startScanning");
 	//start scanning for ble services
+	if(isScanningStarted == true) {
+		console.log("already in scan mode, return !");
+		return;
+	}
 	try {
+		console.log("scan....");
 		isScanningStarted = true;
 		noble.on('stateChange', function(state) {
 			console.log("onStateChange to ", state);
@@ -289,16 +296,27 @@ function startScanning() {
 				//noble.startScanning(allowDuplicates);
 				if(IsAzureClientConnected ) {
 					setTimeout( function() { 
-						console.log("onStateChange startScanning");
-						bus.emit('log',"Start Scanning on Bluetooth ON");
-						noble.startScanning(null,allowDuplicates);
+						if (state === 'poweredOn' && state !== 'unauthorized') {
+							console.log("onStateChange startScanning");
+							bus.emit('log',"Start Scanning on Bluetooth ON");
+							try {
+								noble.startScanning(null,allowDuplicates);
+							} catch (error) {
+								console.log("Unable to start scanning for bluetooth devices. Either bluetooth is not powered on or run as root.");
+								bus.emit('log',"Unable to start scanning for bluetooth devices. Either bluetooth is not powered on or run as root.");
+								console.log(error);
+							}
+						} else {
+							IsBluetoothPoweredOn = false;
+							console.log("bluetooth state != poweredOn");
+						}
 						//BLEApp();
 					}, 2000);
 					console.log("onStateChange started scanning for BLE Devices");
 				
 					if (config.ContinuousBLEConnection === 0) {
 						console.log("onStateChange HandleQueueInterval");
-						HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
+						HandleQueueInterval = setInterval(HandleQueue, BLEReconnectionInterval);
 					}
 				}
 			} else {
@@ -319,7 +337,7 @@ function startScanning() {
 
 		if (config.ContinuousBLEConnection === 0) {
 			console.log("startScanning - HandleQueueInterval");
-			HandleQueueInterval = setInterval(HandleQueue,config.BLEReconnectionInterval);
+			HandleQueueInterval = setInterval(HandleQueue, BLEReconnectionInterval);
 		}
 	} catch(error) {
 		console.log("Please enable bluetooth and Try Again !");
@@ -414,7 +432,7 @@ function BLEApp () {
 		//clearPeripheralList
 		PeripheralList.clear();
 		
-        console.log("Scanning to start soon in " + config.BLEReconnectionInterval + " ms");
+        console.log("Scanning to start soon in " + BLEReconnectionInterval + " ms");
 		if(IsBluetoothPoweredOn && IsAzureClientConnected) {
 			clearTimeout(startScanningIntervalFunction);
 			if(whitelistAddressAll!=undefined && whitelistAddressAll!=null && whitelistAddressAll.length>0) {
@@ -424,10 +442,14 @@ function BLEApp () {
 						console.log("ScanningStopped => ScanningStarted");
 						bus.emit('log',"ScanningStarted");
 					}
-				}, config.BLEReconnectionInterval);
+				}, BLEReconnectionInterval);
 				//}, 1000);
 			}
 		}
+        if (config.BLEConnectionDuration != BLEConnectionDuration) {
+            BLEConnectionDuration = config.BLEConnectionDuration;
+            BLEReconnectionInterval = config.BLEReconnectionInterval;
+        }
 	});
 
 };
@@ -569,6 +591,14 @@ var Geolocation_DS = new SensorDataStructure();
 var Geolocation_CloudAdaptor = new CloudAdaptor();
 var Geolocation_Handle = new Geolocation();
 Geolocation_Handle.GeolocationHandler(Geolocation_CloudAdaptor.AzureHandle,Geolocation_DS.JSON_data,BLEConnectionDuration);
+
+fs.readFile('./connectionTimeout.txt', 'utf8', function (err,data) {
+    if (!err) {
+        BLEConnectionDuration = data;
+        config.BLEConnectionDuration = BLEConnectionDuration;
+        config.BLEReconnectionInterval = config.BLEConnectionDuration + 500;
+    }
+});
 
 startAzureClient();
 

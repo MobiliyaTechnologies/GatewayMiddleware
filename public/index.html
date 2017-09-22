@@ -32,6 +32,12 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 		     <p>Gateway: {{gatewayMac}}</p>
 		     <p>Version: {{gatewayVersion}}</p>
          Enter Rest Server Url: <input style="width:450px" type = "text" ng-model = "config.restServer"><br><br>
+        Enter timeout (ms) : <select id="timeout" ng-model="config.timeout">
+        <option value=3500>3500</option>
+        <option value=5500>5500</option>
+        <option value=7500>7500</option>
+        <option value=8500>8500</option>
+        </select>
        <!--  Enter B2c Application Id: <input type = "text" ng-model = "config.b2cApplicationId"><br>
 		 Enter B2c Tenant Name: <input type = "text" ng-model = "config.tenantName"><br>
 		 Enter B2c Sign In Policy: <input type = "text" ng-model = "config.signInPolicyName"><br>
@@ -56,7 +62,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
     
     });
 		  
-         mainApp.factory('aadService', function ($http) {
+         mainApp.factory('aadService', function ($http,$rootScope) {
         var responseType = 'token id_token';
         var redirectURI = './redirect.html';
         var loginDisplayType = {
@@ -145,8 +151,16 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
             policyLogout: function (network, policy) {
                 hello.logout(network, { force: true }).then(function (auth) {
                     console.log("auth :", auth);
+                    $scope.deleteStoredFiles();
                 }, function (e) {
                     console.log("Erorr :", e);
+                    if(e.error.code == "invalid_session") {
+                        console.log("invalid_session");
+                        alert("Failed to reset Gateway. invalid_session!");
+                        $rootScope.$broadcast('invalid_session', '');
+                    } else {
+                        alert("Failed to reset Gateway. Please try again!");
+                    }
                 });
             },
             online: function (session) {
@@ -170,7 +184,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 
         };
     });
-         mainApp.controller('mainController', function($scope,aadService,$http,$websocket){ 
+         mainApp.controller('mainController', function($scope,aadService,$http,$websocket,$rootScope){ 
 			 $scope.gatewayMac="Loading.."
              $scope.gatewayVersion = "Loading..";
              $scope.loginAttempt = 0;
@@ -179,10 +193,11 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
              };
 			 
 			 document.getElementById("logDiv").readOnly = true;
-		 $scope.config={restServer:'',
+		     $scope.config={restServer:'',
+                        'timeout' : '8500',
 						'b2cApplicationId':'',
-            'tenantName': "",
-            'signInPolicyName': ""
+             'tenantName': "",
+             'signInPolicyName': ""
             //'signInSignUpPolicyName': ""
 			
 			} 
@@ -209,9 +224,9 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                 //localStorage.setItem("b2cApplicationId", $scope.config.b2cApplicationId);
                 //localStorage.setItem("tenantName", $scope.config.tenantName);
                 //localStorage.setItem("signInPolicyName", $scope.config.signInPolicyName);
-                localStorage.setItem("signInSignUpPolicyName", $scope.config.signInSignUpPolicyName);
+                //localStorage.setItem("signInSignUpPolicyName", $scope.config.signInSignUpPolicyName);
 				localStorage.setItem("redirect_uri", 'http://localhost:65159/redirect.html');
-				
+			    $scope.saveTimeout($scope.config.timeout);
 				$scope.getLoginDetails(state);
 				
 				/*var script = document.createElement('script');
@@ -222,14 +237,21 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 				*/
 		   }
            $scope.reset=function() {
-					$http({
+               aadService.policyLogout(helloNetwork.adB2CSignIn, null);
+           }
+           $rootScope.$on('invalid_session', function(event, data) {
+                   $scope.deleteStoredFiles();
+            });
+           $scope.deleteStoredFiles=function() {
+               console.log("deleteStoredFiles");
+               $http({
                         url: 'http://localhost:65159/resetgateway',
                         method: 'GET',
                     }).then(function (response) {
                         console.log(response);
-						alert("Successfully Reset Gateway !");
+						alert("Successfully Reset Gateway. Please restart!");
                     }).catch(function (error) {
-                        alert("Failed to reset Gateway");    
+                        alert("Failed to reset Gateway. Please try again!");    
                     });
            }
 		   $scope.getConnectionStr=function(mac){
@@ -264,6 +286,22 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                 } 
 		   
 		   }
+		   $scope.saveTimeout=function(timeout){
+					$http({
+                        url: 'http://localhost:65159/timeout',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'timeout':timeout},
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+		 			   $scope.loader.loading = false;
+                    }).catch(function (error) {
+		 			    $scope.loader.loading = false;
+                    });
+           }
 		   $scope.saveConnectionStr=function(constr){
 		   
 					$http({
@@ -346,7 +384,6 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                         });
 
 			}
-			
 			$scope.getLoginDetails=function(state){
 			
 				url=$scope.config.restServer;
@@ -358,7 +395,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 				
 			    console.log("RestServer URL ::",url);			   
 			    $http({
-                        url: 'http://assetmonitoring.azurewebsites.net/api/GetB2cConfiguration',
+                        url: url +'api/GetB2cConfiguration',
                         dataType: 'json',
                         method: 'GET'
                     }).then(function (response) {
@@ -380,7 +417,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 						script.setAttribute('type', 'text/javascript');
 						script.setAttribute('src', './aadb2c.js');
 						document.head.appendChild(script);
-						$scope.aadLogin(state);
+                        $scope.getConfig(state);
                         $scope.loginAttempt = 0;
 					
                     }).catch(function (error) {
@@ -417,6 +454,28 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                             console.log("$scope.gatewayMac error: ", error);
                         });
 			}
+
+            $scope.showTimeout=function() {
+                $http({
+                        url: 'http://localhost:65159/timeout',
+                        dataType: 'json',
+                        method: 'GET',
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                      }).then(function(response) {
+                        var timeSelect = document.getElementById('timeout');
+                        $scope.config.timeout = response.data;
+                        for(var i, j = 0; i = timeSelect.options[j]; j++) {
+                            if(i.value == response.data) {
+                                timeSelect.selectedIndex = j;
+                                break;
+                            }
+                        }
+                      }).catch(function(response) {
+                        console.log("Error getting connectionTimeout value : ", error);
+                      });
+            }
 			
 			$scope.showVersion=function(){
 				//console.log("$scope.gatewayMac", $scope.gatewayMac);
@@ -439,6 +498,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 
 			$scope.aadLogin=function(state){
 			
+                setTimeout (function() {
 				aadService.signIn($scope.config,function (b2cSession) {
 					if (!online(b2cSession) && state == 'click') {
 						aadService.policyLogin(helloNetwork.adB2CSignIn, loginDisplayType.Page);
@@ -450,24 +510,26 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 						$scope.getMacAddr();
 					}
 				});      
+                }, 1000);
 			}
 			
 			
-			$scope.getConfig=function(){
+			$scope.getConfig=function(state){
 			
 				$scope.config.restServer=localStorage.getItem("restServer");
                 $scope.config.b2cApplicationId=localStorage.getItem("b2cApplicationId");
                 $scope.config.tenantName=localStorage.getItem("tenantName");
                 $scope.config.signInPolicyName=localStorage.getItem("signInPolicyName");
-                /*if($scope.config.restServer){
-					$scope.aadLogin('intial');
-				}*/
+                if($scope.config.restServer){
+					$scope.aadLogin(state);
+				}
 			
 			}
 			
-			$scope.getConfig();
+			$scope.getConfig('intial');
 			$scope.showMacAddr();
 			$scope.showVersion(); 
+			$scope.showTimeout();
 			 
 			 
 			     var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
