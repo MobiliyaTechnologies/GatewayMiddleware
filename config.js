@@ -26,11 +26,11 @@ KafkaPartitionNumber:0,
 GatewayTimezone:"Asia/Kolkata",
 Latitude:47.6464737,
 Longitude:-122.2090137,
-GPSDataInterval:300000,
+GPSDataInterval:600000, //10 min
 ContinuousBLEConnection:0,	//0: Connect at intervals, 1: Continuous connection
 SimultaneousBLEConnections:4,
 BLEConnectionDuration:3500,
 BLEReconnectionInterval:5000,
-Version:"1.03"
+Version:"1.05"
 };
 module.exports = config;

@@ -22,7 +22,6 @@ var config = require('../../config');
 var groupList = new List();
 var lat = 0;
 var lng = 0;
-var lastSentTime = 0;
 
 //Add group in list:
 var addGroup = function (groupId) {
@@ -43,8 +42,16 @@ var removeAllGroups = function (groupId) {
 	groupList.clear();
 }
 
-function Geolocation () { };//class for SensorTag1350
-Geolocation.prototype.GeolocationHandler = function (CloudAdaptor,DataWrapper,BLEReconnectionInterval){ // sensor tag 1350 handle
+var setGeolocation = function (body) {
+	console.log("setGeolocation", body);	  
+	  lat = body.latitude;
+	  lng = body.longitude;
+}
+
+bus.on('setGeolocation', setGeolocation);
+
+function Geolocation () { };//class for Geolocation
+Geolocation.prototype.GeolocationHandler = function (CloudAdaptor,DataWrapper){ // Geolocation handler
 	console.log("Geolocation.Prototype.GeolocationHandler ", new Date());	
 	
 	//Assign the event handler to an event:
@@ -52,30 +59,15 @@ Geolocation.prototype.GeolocationHandler = function (CloudAdaptor,DataWrapper,BL
 	bus.on('sensor_group_disconnected', removeGroup);
 	bus.on('all_sensor_group_disconnected', removeAllGroups);
 	
-	var interval = BLEReconnectionInterval;
-	if(BLEReconnectionInterval - 500 > 100) {
-		interval = BLEReconnectionInterval - 500;
-	}
 	setInterval(function() {
-		if (groupList.length > 0) {
-			//after every GPSDataInterval interval
-			var currentTime = new Date().getTime();
-			var sendFlag = true;
-			if(lat == config.Latitude && lng == config.Longitude && (currentTime - lastSentTime < config.GPSDataInterval)) {
-				sendFlag = false;
-			}
-			if(sendFlag) {
-				lastSentTime = new Date().getTime();
-				lat = config.Latitude;
-				lng = config.Longitude;
-				console.log("Geolocation  SENT:");
-				var json_data = {GroupIds:groupList.toArray(),Latitude:config.Latitude,Longitude:config.Longitude,Timestamp:new Date()};
-				CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
-			}
-		} else {
-			//console.log("Geolocation not sent");
+		if (lat == 0 && lng == 0) {
+			lat = config.Latitude;
+			lng = config.Longitude;
 		}
-	}, interval);
+		console.log("Geolocation  SENT: " + lat + " " + lng);
+		var json_data = {GroupIds:groupList.toArray(),Latitude:lat,Longitude:lng,Timestamp:new Date()};
+		CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+	}, config.GPSDataInterval);
 };
 
 module.exports = Geolocation;

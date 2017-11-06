@@ -191,6 +191,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 			 $scope.gatewayMac="Loading.."
              $scope.gatewayVersion = "Loading..";
              $scope.loginAttempt = 0;
+             $scope.disableGeolocation = false;
 			 $scope.loader = { 
                 loading : false
              };
@@ -531,7 +532,6 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                 }, 1000);
 			}
 			
-			
 			$scope.getConfig=function(state){
 			
 				$scope.config.restServer=localStorage.getItem("restServer");
@@ -544,15 +544,49 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 			
 			}
 			
+            $scope.updateGeolocation = function() {
+                if(!$scope.disableGeolocation) {
+                    setTimeout(function() {
+                        console.log("Geolocation getCurrentPosition first time");
+                        navigator.geolocation.getCurrentPosition(setGeolocation);
+                    }, 60000);
+                    setInterval(function() {
+                        console.log("Geolocation getCurrentPosition");
+                        navigator.geolocation.getCurrentPosition(setGeolocation);
+                    }, 600000);
+                    $scope.disableGeolocation = true;  
+                }
+            }
+
+            function setGeolocation(position) {
+                console.log("Geolocation ", position.coords.latitude, position.coords.longitude);
+
+                $http({
+                        url: 'http://localhost:65159/geolocation',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'latitude':position.coords.latitude, 'longitude':position.coords.longitude},
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+						})
+                        .catch(function (error) {
+                            console.log(error);
+                        });    
+            }
+            
             $scope.enableResetButton(false);
             $scope.enableSubmitButton(false);
 			$scope.getConfig('intial');
 			$scope.showMacAddr();
 			$scope.showVersion(); 
 			$scope.showTimeout();
+            $scope.updateGeolocation();
 			 
 			 
-			     var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
+		var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
 		$scope.data='Initializing Asset Tracking & Monitoring\nPlease Wait\n';
         ws.$on('$open', function () {
             console.log('Websocket is open!');
