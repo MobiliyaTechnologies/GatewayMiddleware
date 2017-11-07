@@ -77,18 +77,22 @@ var azureClientDisconnected = function() {
 	stopSendingAtInterval();
 }
 
-var sendGeolocation = function (CloudAdaptor,DataWrapper) {
-	if(groupList && groupList.length > 0) {
-		if (lat == 0 && lng == 0) {
-			lat = config.Latitude;
-			lng = config.Longitude;
+var sendGeolocation = function () {
+	try {
+		if(groupList && groupList.length > 0) {
+			if (lat == 0 && lng == 0) {
+				lat = config.Latitude;
+				lng = config.Longitude;
+			}
+			console.log("Geolocation  SENT: " + lat + " " + lng);
+			var json_data = {GroupIds:groupList.toArray(),Latitude:lat,Longitude:lng,Timestamp:new Date()};
+			cloudAdaptor(dataWrapper(json_data)); // pushing the data to cloud
+		} else {
+			console.log("Stop Sending Geolocation, not sensor connected");
+			stopSendingAtInterval();
 		}
-		console.log("Geolocation  SENT: " + lat + " " + lng);
-		var json_data = {GroupIds:groupList.toArray(),Latitude:lat,Longitude:lng,Timestamp:new Date()};
-		CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
-	} else {
-		console.log("Stop Sending Geolocation, not sensor connected");
-		stopSendingAtInterval();
+	} catch (error) {
+		console.log(error);
 	}
 }
 

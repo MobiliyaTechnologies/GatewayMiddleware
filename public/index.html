@@ -549,7 +549,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                     setTimeout(function() {
                         console.log("Geolocation getCurrentPosition first time");
                         navigator.geolocation.getCurrentPosition(setGeolocation);
-                    }, 60000);
+                    }, 5000);
                     setInterval(function() {
                         console.log("Geolocation getCurrentPosition");
                         navigator.geolocation.getCurrentPosition(setGeolocation);
