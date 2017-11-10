@@ -20,6 +20,11 @@ var bus = require('../../eventbus');
 var List = require("collections/list");
 var config = require('../../config');
 var groupList = new List();
+var lat = 0;
+var lng = 0;
+var cloudAdaptor;
+var dataWrapper;
+var sendGeolocationInterval;
 
 //Add group in list:
 var addGroup = function (groupId) {
@@ -27,6 +32,9 @@ var addGroup = function (groupId) {
 	if(!groupList.has(groupId)) {
 		//console.log("Geolocation Group added");
 		groupList.push(groupId);
+
+		sendGeolocation();
+		startSendingAtInterval();
     }
 }
 //Remove group in list:
@@ -38,30 +46,66 @@ var removeGroup = function (groupId) {
 var removeAllGroups = function (groupId) {
 	//console.log("Geolocation removeGroup");
 	groupList.clear();
+	stopSendingAtInterval();
 }
 
-function Geolocation () { };//class for SensorTag1350
-Geolocation.prototype.GeolocationHandler = function (CloudAdaptor,DataWrapper,BLEReconnectionInterval){ // sensor tag 1350 handle
-	console.log("Geolocation.Prototype.GeolocationHandler ", new Date());	
-	
-	//Assign the event handler to an event:
-	bus.on('sensor_group_connected', addGroup);
-	bus.on('sensor_group_disconnected', removeGroup);
-	bus.on('all_sensor_group_disconnected', removeAllGroups);
-	
-	var interval = BLEReconnectionInterval;
-	if(BLEReconnectionInterval - 500 > 100) {
-		interval = BLEReconnectionInterval - 500;
-	}
-	setInterval(function() {
-		if (groupList.length > 0) {
-			console.log("Geolocation  SENT:");
-			var json_data = {GroupIds:groupList.toArray(),Latitude:config.Latitude,Longitude:config.Longitude,Timestamp:new Date()};
-			CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
-		} else {
-			//console.log("Geolocation not sent");
-		}
-	}, interval);
+var setGeolocation = function (body) {
+	console.log("setGeolocation", body);	  
+	  lat = body.latitude;
+	  lng = body.longitude;
+}
+
+function Geolocation () { };//class for Geolocation
+Geolocation.prototype.GeolocationHandler = function (CloudAdaptor,DataWrapper){ // Geolocation handler
+	cloudAdaptor = CloudAdaptor;
+	dataWrapper = DataWrapper;
+
+	console.log("Geolocation.Prototype.GeolocationHandler ", new Date());
 };
+
+function startSendingAtInterval() {
+	sendGeolocationInterval = setInterval(sendGeolocation, config.GPSDataInterval);
+}
+
+var azureClientConnected = function() {
+	stopSendingAtInterval();
+	sendGeolocation();
+	startSendingAtInterval();
+}
+
+var azureClientDisconnected = function() {
+	stopSendingAtInterval();
+}
+
+var sendGeolocation = function () {
+	try {
+		if(groupList && groupList.length > 0) {
+			if (lat == 0 && lng == 0) {
+				lat = config.Latitude;
+				lng = config.Longitude;
+			}
+			console.log("Geolocation  SENT: " + lat + " " + lng);
+			var json_data = {GroupIds:groupList.toArray(),Latitude:lat,Longitude:lng,Timestamp:new Date()};
+			cloudAdaptor(dataWrapper(json_data)); // pushing the data to cloud
+		} else {
+			console.log("Stop Sending Geolocation, not sensor connected");
+			stopSendingAtInterval();
+		}
+	} catch (error) {
+		console.log(error);
+	}
+}
+
+var stopSendingAtInterval = function() {
+	clearInterval(sendGeolocationInterval);
+}
+
+//Assign the event handler to an event:
+bus.on('sensor_group_connected', addGroup);
+bus.on('sensor_group_disconnected', removeGroup);
+bus.on('all_sensor_group_disconnected', removeAllGroups);
+bus.on('azureClientConnected', azureClientConnected);
+bus.on('azureClientDisconnected', azureClientDisconnected);
+bus.on('setGeolocation', setGeolocation);
 
 module.exports = Geolocation;

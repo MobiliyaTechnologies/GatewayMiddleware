@@ -43,8 +43,8 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 		 Enter B2c Sign In Policy: <input type = "text" ng-model = "config.signInPolicyName"><br>
 		  -->
 		  <div style="margin-top:10px;margin-bottom:10px;width=50" >
-			  <button style="height:30px;width:150px" ng-click = "submit('click')" >Submit</button>
-			  <button style="height:30px;width:150px;margin-left:50px" ng-click = "reset('click')" >Reset Gateway</button>
+			  <button id="submitButton" style="height:30px;width:150px" ng-click = "submit('click')" >Submit</button>
+			  <button id="resetButton" style="height:30px;width:150px;margin-left:50px" ng-click = "reset('click')" >Reset Gateway</button>
 		 	  <div ng-show="loader.loading"  >Signing in... Please wait.</div>
 		  </div>
 		 <br>
@@ -133,6 +133,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                         this.policyLogin(network, loginDisplayType.Page);
                     });
 		  				$scope.loader.loading = false;
+                        $rootScope.$broadcast('enableLoginButton', '');
                     return;
                 }
 				
@@ -146,17 +147,18 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                     }
                     bootbox.alert('Signin error: ' + e.error.message);
 		 			$scope.loader.loading = false;
+                    $rootScope.$broadcast('enableLoginButton', '');
                 });
             },
             policyLogout: function (network, policy) {
                 hello.logout(network, { force: true }).then(function (auth) {
                     console.log("auth :", auth);
-                    $scope.deleteStoredFiles();
+                    $rootScope.$broadcast('deleteStoredFiles', '');
                 }, function (e) {
                     console.log("Erorr :", e);
                     if(e.error.code == "invalid_session") {
                         console.log("invalid_session");
-                        alert("Failed to reset Gateway. invalid_session!");
+                        //alert("Failed to reset Gateway. invalid_session!");
                         $rootScope.$broadcast('invalid_session', '');
                     } else {
                         alert("Failed to reset Gateway. Please try again!");
@@ -173,6 +175,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                     if (s.error.code === 'blocked') {   //silentrenew(display: none) in case of expired token returns X-frame Options as DENY error
                         bootbox.alert("<p class='bg-danger'>there was an error in silent renewing the token. Please login again</p>");
 		 				$scope.loader.loading = false;
+                        $rootScope.$broadcast('enableLoginButton', '');
                         return;
                     }
                 }
@@ -188,19 +191,21 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 			 $scope.gatewayMac="Loading.."
              $scope.gatewayVersion = "Loading..";
              $scope.loginAttempt = 0;
+             $scope.disableGeolocation = false;
 			 $scope.loader = { 
                 loading : false
              };
 			 
 			 document.getElementById("logDiv").readOnly = true;
+
 		     $scope.config={restServer:'',
                         'timeout' : '8500',
 						'b2cApplicationId':'',
              'tenantName': "",
              'signInPolicyName': ""
             //'signInSignUpPolicyName': ""
-			
 			} 
+
 		var loginDisplayType = {
             PopUp: 'popup',
             None: 'none',
@@ -216,10 +221,31 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
             var currentTime = (new Date()).getTime() / 1000;
             return session && session.access_token && session.expires > currentTime;
         };
+
+        $scope.enableSubmitButton=function(isEnable){
+            if(isEnable) { 
+                document.getElementById("submitButton").style.backgroundColor = "#0e98f9"
+                document.getElementById("submitButton").style.color = "#ffffff";
+            } else {
+                document.getElementById("submitButton").style.backgroundColor = "#f3f3f3"
+                document.getElementById("submitButton").style.color = "#151515";
+            }
+        }
+
+        $scope.enableResetButton=function(isEnable){
+            if(isEnable) { 
+                document.getElementById("resetButton").style.backgroundColor = "#0e98f9"
+                document.getElementById("resetButton").style.color = "#ffffff";
+            } else {
+                document.getElementById("resetButton").style.backgroundColor = "#f3f3f3";
+                document.getElementById("resetButton").style.color = "#151515";
+            }
+        }
 		 $scope.submit=function(state){
              console.log("Logging in ...");
 			  $scope.loginAttempt = $scope.loginAttempt + 1;
 			  $scope.loader.loading = true;
+              $scope.enableSubmitButton(false);
 				localStorage.setItem("restServer", $scope.config.restServer);
                 //localStorage.setItem("b2cApplicationId", $scope.config.b2cApplicationId);
                 //localStorage.setItem("tenantName", $scope.config.tenantName);
@@ -241,6 +267,15 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
            }
            $rootScope.$on('invalid_session', function(event, data) {
                    $scope.deleteStoredFiles();
+            });
+           $rootScope.$on('deleteStoredFiles', function(event, data) {
+                   $scope.deleteStoredFiles();
+            });
+           $rootScope.$on('enableLoginButton', function(event, data) {
+                   $scope.enableSubmitButton(true);
+            });
+           $rootScope.$on('disableLoginButton', function(event, data) {
+                   $scope.enableSubmitButton(false);
             });
            $scope.deleteStoredFiles=function() {
                console.log("deleteStoredFiles");
@@ -297,8 +332,9 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                         }
                     }).then(function (response) {
                         console.log(response);
-		 			   $scope.loader.loading = false;
+		 			    $scope.loader.loading = false;
                     }).catch(function (error) {
+                        console.log(error);
 		 			    $scope.loader.loading = false;
                     });
            }
@@ -316,30 +352,12 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                     }).then(function (response) {
                         console.log(response);
 						alert("Successfully stored connection string !");
-		 			   $scope.loader.loading = false;
+		 			    $scope.loader.loading = false;
+                        $scope.enableSubmitButton(false);
                     })
                         .catch(function (error) {
-		 					 $scope.loader.loading = false;
-                            
-                        });
-		   }
-		   $scope.saveCapabilityUnits=function(capabilities){
-		   
-					$http({
-                        url: 'http://localhost:65159/capabilities',
-                        dataType: 'json',
-                        method: 'POST',
-						data:{'capabilities':JSON.stringify(capabilities)},
-                        headers: {
-                            "Content-Type": "application/json",
-                          
-                        }
-                    }).then(function (response) {
-                        console.log(response);
-						alert("Successfully stored capabilities !");
-                    })
-                        .catch(function (error) {
-                            
+		 					$scope.loader.loading = false;
+                            $scope.enableSubmitButton(true);
                         });
 		   }
 		   $scope.saveCapabilityUnits=function(capabilities){
@@ -430,6 +448,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                                 console.log("Could not login, please try again !");
                                 alert("Could not login, please try again !");
                                 $scope.loader.loading = false;
+                                $scope.enableSubmitButton(true);
                             }
                     });
 			}
@@ -513,7 +532,6 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                 }, 1000);
 			}
 			
-			
 			$scope.getConfig=function(state){
 			
 				$scope.config.restServer=localStorage.getItem("restServer");
@@ -526,13 +544,49 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 			
 			}
 			
+            $scope.updateGeolocation = function() {
+                if(!$scope.disableGeolocation) {
+                    setTimeout(function() {
+                        console.log("Geolocation getCurrentPosition first time");
+                        navigator.geolocation.getCurrentPosition(setGeolocation);
+                    }, 5000);
+                    setInterval(function() {
+                        console.log("Geolocation getCurrentPosition");
+                        navigator.geolocation.getCurrentPosition(setGeolocation);
+                    }, 600000);
+                    $scope.disableGeolocation = true;  
+                }
+            }
+
+            function setGeolocation(position) {
+                console.log("Geolocation ", position.coords.latitude, position.coords.longitude);
+
+                $http({
+                        url: 'http://localhost:65159/geolocation',
+                        dataType: 'json',
+                        method: 'POST',
+						data:{'latitude':position.coords.latitude, 'longitude':position.coords.longitude},
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    }).then(function (response) {
+                        console.log(response);
+						})
+                        .catch(function (error) {
+                            console.log(error);
+                        });    
+            }
+            
+            $scope.enableResetButton(false);
+            $scope.enableSubmitButton(false);
 			$scope.getConfig('intial');
 			$scope.showMacAddr();
 			$scope.showVersion(); 
 			$scope.showTimeout();
+            $scope.updateGeolocation();
 			 
 			 
-			     var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
+		var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
 		$scope.data='Initializing Asset Tracking & Monitoring\nPlease Wait\n';
         ws.$on('$open', function () {
             console.log('Websocket is open!');
@@ -542,6 +596,9 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 		ws.$on('$message', function (data) {
             //console.log('The websocket server has sent the following data:');
             console.log(data);
+            if (data.toLowerCase().indexOf("login") >= 0) {
+                $scope.enableSubmitButton(true);
+            }
 			$scope.data=$scope.data+data+'\n';
 			$scope.$apply();
 			var elmnt = document.getElementById("logDiv");

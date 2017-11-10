@@ -44,10 +44,14 @@ var client = null;
 function AzureAdaptor () {};
 
 AzureAdaptor.prototype.AzureHandle= function (json_data) {
-      var message = new Message(json_data);
-      //message.properties.add('temperatureAlert', (temperature > 28) ? 'true' : 'false');
-      console.log('Sending message: ' + message.getData());
-      client.sendEvent(message, printResultFor('send'));
+	try {
+		var message = new Message(json_data);
+		//message.properties.add('temperatureAlert', (temperature > 28) ? 'true' : 'false');
+		console.log('Sending message: ' + message.getData());
+		client.sendEvent(message, printResultFor('send'));
+	} catch(error) {
+		console.log(error);
+	}
 };
 
 AzureAdaptor.prototype.AzureStop = function (cb) {
@@ -91,6 +95,7 @@ AzureAdaptor.prototype.AzureInit = function (cb) {
 					console.log('Azure Iot Sdk Connected');
 					bus.emit('log','Azure Iot Sdk Connected');
 					cb();
+					bus.emit('azureClientConnected');
 					
 					client.on('message', function (msg) {
 						console.log("CloudToDevice Message Received");

@@ -49,6 +49,9 @@ var electron = require('electron');
 var app1 = electron.app;
 var BrowserWindow = electron.BrowserWindow;
 
+//Google API key
+//AIzaSyCnvrW9m3U2n0IRqG5JSd2vZy0Dch41WIQ
+process.env.GOOGLE_API_KEY = "AIzaSyCnvrW9m3U2n0IRqG5JSd2vZy0Dch41WIQ";
 
 var mainWindow = null;
 app1.commandLine.appendSwitch("ignore-certificate-errors");
@@ -133,6 +136,12 @@ app.post('/timeout', function (req, res) {
     config.BLEReconnectionInterval = config.BLEConnectionDuration + 500;
 	fs.writeFileSync('./connectionTimeout.txt', config.BLEConnectionDuration, 'utf-8');
     res.sendStatus(200);
+})
+
+app.post('/geolocation', function (req, res) {
+	console.log("emit setGeolocation ", req.body);
+	bus.emit('setGeolocation',req.body);
+	res.sendStatus(200);
 })
 
 app.post('/connectionstring', function (req, res) {
