@@ -27,6 +27,7 @@ var ThunderboardReact = require('./PluginGateway/Bluetooth/ThunderReact');
 var ThunderboardSense = require('./PluginGateway/Bluetooth/ThunderSense');
 var XDK = require('./PluginGateway/Bluetooth/XDK');
 var Geolocation = require('./PluginGateway/Bluetooth/Geolocation');
+var XYBeacon = require('./PluginGateway/Bluetooth/XYBeacon');
 var CloudAdaptor = require('./PluginGateway/Cloud/AzureAdaptor');
 var SensorDataStructure = require('./PluginGateway/SensorDataStructure/Json');
 var CloudLed = require('./PluginGateway/Cloud/CloudLed');
@@ -34,9 +35,7 @@ var whitelistAddressAll;
 var whitelistContentAll;
 var UpdateIP = require('./PluginGateway/Cloud/UpdateIP');
 var GetWhiteList = require('./PluginGateway/Cloud/GetWhiteList');
-const CompatibleSensors = [];
-var DiscoveredPeripheral = [];
-var allowDuplicates = false;
+var allowDuplicates = true;
 var fs = require('fs');
 var jsonfile = require('jsonfile')
 var sensorListFile = 'sensorlist.json';
@@ -60,13 +59,15 @@ var IsAzureClientConnected = false;
 var isScanningStarted = false;
 var startedBLEApp = 0;
 var startScanningIntervalFunction;
+var updateSensorListAttempt = 0;
 
 let appInsights = require('applicationinsights');
 let client = appInsights.client;
 
 //Create an event handler:
 var myUpdateEventHandler = function () {
-	  updateSensorList();
+	updateSensorListAttempt = 0;
+	updateSensorList();
 }
 
 var updateSensorTypesHandler = function () {
@@ -107,10 +108,14 @@ var startAzureClient = function initAzureClinet() {
 	});
 }
 
-function updateSensorList() {
+var updateSensorList = function() {
 	console.log('Update sensor list!');
+	updateSensorListAttempt = updateSensorListAttempt + 1;
+	PeripheralList.clear();
+	peripheralDisconnectHandler();
 	if (fs.existsSync(sensorListFile)) {
 		var fileData = jsonfile.readFileSync(sensorListFile, "utf8");
+		//console.log("fileData ", fileData);
 		if (fileData == undefined || fileData == null) {
 			console.log("Unabel to read sensorListFile !!");	
 			console.log("Whitelisted sensor list not available");	
@@ -137,7 +142,7 @@ function updateSensorList() {
 					//scanning will restart after stopping
 					console.log("restart scanning G");
 					stopScanning();
-					startScanning();
+					//startScanning();
 				}
 			} else if(whitelistAddressAll == undefined || whitelistAddressAll == null || whitelistAddressAll.length <= 0){
 				//stop scanning if not whitelisted sensor available
@@ -147,6 +152,10 @@ function updateSensorList() {
 				}
 				console.log("Whitelisted sensor list not available");	
 				bus.emit('log', "Whitelisted sensor list not available. If sensors exist, click submit again to sync.");
+				if (updateSensorListAttempt == 1) {
+					console.log("reattempt to update sensor list");
+					setTimeout(updateSensorList, 3000);
+				}
 			}
 		}
 	} else {
@@ -280,6 +289,7 @@ function stopScanning() {
 
 function startScanning() {
 	console.log("startScanning");
+	shouldReconnect = false;
 	//start scanning for ble services
 	if(isScanningStarted == true) {
 		console.log("already in scan mode, return !");
@@ -358,23 +368,22 @@ function BLEApp () {
 	bus.emit('log',"ScanningStarted");
 	//callback when BLE scan discovers a new ble device, return a peripheral object
 	noble.on('discover',function(peripheral) { 
-		//console.log(peripheral)
+		//console.log('onDiscover ', peripheral.id);
 		// search for the local devices at, if it is a whitelisted address, connect to its specific sensor library
 		var index = whitelistAddressAll.indexOf(peripheral.id);
 		if (index == -1) {
 			// condition when the device found is not in whitelist
-			console.log('Found device with local name which is not a whitelist : '+ peripheral.id);
-			//bus.emit('log','Found device with local name which is not a whitelist : '+ peripheral.id);
-			//create a array for the devices which are discovered now, but may have been whitelisted in runtime later
-			// NOTE : It may create large memory if so many decvices are discovered over time, should apply filter in the device name
-			if (CompatibleSensors.indexOf(peripheral.advertisement.localName) !== -1){
-				DiscoveredPeripheral.push(peripheral);
-				//console.log(DiscoveredPeripheral);
-			}
+			//console.log('Found device with local name which is not a whitelist : '+ peripheral.id);
 		} else {
 			// check for particular case of the whitelist address
-			console.log(peripheral.id);
+			console.log('discovered petipheral ', peripheral.id);
 			if (config.ContinuousBLEConnection === 0) {
+				if(whitelistContentAll[peripheral.id.toLowerCase()].SensorType.startsWith("XY")) {
+					console.log('found XY Beacon: ', peripheral.advertisement.localName + ' ' + peripheral.id + ' ' + peripheral.rssi);
+					XYBeacon_Handle.Discovered(peripheral.id, peripheral.rssi, whitelistContentAll[peripheral.id.toLowerCase()]);
+					return;
+				}
+
 				var found = false;
 				PeripheralList.forEach(function(element, indx){
 						//console.log(JSON.stringify(element));
@@ -425,10 +434,7 @@ function BLEApp () {
 	noble.on('scanStop', function(){
 		console.log("ScanningStopped");
 		bus.emit('log',"ScanningStopped");
-		/*var t = 2000;
-		if(config.BLEReconnectionInterval - 3000 > 2000) {
-			t = config.BLEReconnectionInterval - 3000;
-		}*/
+		
 		//clearPeripheralList
 		PeripheralList.clear();
 		
@@ -562,7 +568,7 @@ function connectPeripheral(peripheral) {
 						//console.log(peripheral);
 						// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found
 						console.log('No compatible library for this sensor: ', peripheral.advertisement.localName,peripheral.id);
-						bus.emit('log','No compatible library for this sensor: ' + peripheral.id);
+						bus.emit('log','No compatible library for ' + peripheral.advertisement.localName + ' ' + peripheral.id);
 					}
 				}
 		} else {
@@ -592,11 +598,21 @@ var Geolocation_CloudAdaptor = new CloudAdaptor();
 var Geolocation_Handle = new Geolocation();
 Geolocation_Handle.GeolocationHandler(Geolocation_CloudAdaptor.AzureHandle,Geolocation_DS.JSON_data,BLEConnectionDuration);
 
+var XYBeacon_DS = new SensorDataStructure();
+var XYBeacon_CloudAdaptor = new CloudAdaptor();
+var XYBeacon_Handle = new XYBeacon();
+XYBeacon_Handle.XYBeaconHandler(XYBeacon_CloudAdaptor.AzureHandle,XYBeacon_DS.JSON_data,config.RSSIDataIntervalMax);
+
 fs.readFile('./connectionTimeout.txt', 'utf8', function (err,data) {
     if (!err) {
-        BLEConnectionDuration = data;
-        config.BLEConnectionDuration = BLEConnectionDuration;
-        config.BLEReconnectionInterval = config.BLEConnectionDuration + 500;
+		try {
+			console.log('set connection duration to ', data);
+			BLEConnectionDuration = parseInt(data);
+			config.BLEConnectionDuration = BLEConnectionDuration;
+			config.BLEReconnectionInterval = config.BLEConnectionDuration + 500;
+		} catch (err) {
+			console.log(err);
+		}
     }
 });
 

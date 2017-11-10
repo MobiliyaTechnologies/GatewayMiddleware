@@ -132,7 +132,7 @@ app.get('/timeout', function (req, res) {
 
 app.post('/timeout', function (req, res) {
 	var config = require('./config');
-    config.BLEConnectionDuration = req.body.timeout;
+	config.BLEConnectionDuration = req.body.timeout;
     config.BLEReconnectionInterval = config.BLEConnectionDuration + 500;
 	fs.writeFileSync('./connectionTimeout.txt', config.BLEConnectionDuration, 'utf-8');
     res.sendStatus(200);
@@ -210,5 +210,7 @@ getmac.getMac(function(err,macAddress){
 			throw err;
 		}
     console.log(macAddress);
-		MAC = macAddress;
+	MAC = macAddress;
+	var config = require('./config');
+	config.MAC = MAC;
 })
