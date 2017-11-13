@@ -380,7 +380,7 @@ function BLEApp () {
 			if (config.ContinuousBLEConnection === 0) {
 				if(whitelistContentAll[peripheral.id.toLowerCase()].SensorType.startsWith("XY")) {
 					console.log('found XY Beacon: ', peripheral.advertisement.localName + ' ' + peripheral.id + ' ' + peripheral.rssi);
-					XYBeacon_Handle.Discovered(peripheral.id, peripheral.rssi, whitelistContentAll[peripheral.id.toLowerCase()]);
+					XYBeacon_Handle.Discovered(whitelistContentAll[peripheral.id.toLowerCase()], peripheral.rssi);
 					return;
 				}
 
@@ -601,7 +601,7 @@ Geolocation_Handle.GeolocationHandler(Geolocation_CloudAdaptor.AzureHandle,Geolo
 var XYBeacon_DS = new SensorDataStructure();
 var XYBeacon_CloudAdaptor = new CloudAdaptor();
 var XYBeacon_Handle = new XYBeacon();
-XYBeacon_Handle.XYBeaconHandler(XYBeacon_CloudAdaptor.AzureHandle,XYBeacon_DS.JSON_data,config.RSSIDataIntervalMax);
+XYBeacon_Handle.XYBeaconHandler(XYBeacon_CloudAdaptor.AzureHandle,XYBeacon_DS.JSON_data);
 
 fs.readFile('./connectionTimeout.txt', 'utf8', function (err,data) {
     if (!err) {

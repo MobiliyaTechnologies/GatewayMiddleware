@@ -27,7 +27,11 @@ var cloudAdaptor;
 var dataWrapper;
 var sendRSSIInterval;
 var previousRssiHashMap = new FastMap();
+var timestampHashMap = new FastMap();
+var timestampLastSentHashMap = new FastMap();
 var averageNumber = 9;
+var movingAgerages;
+var dbRange = 120;
 
 
 function XYBeacon () { };//class for XYBeacon
@@ -35,78 +39,109 @@ function XYBeacon () { };//class for XYBeacon
 XYBeacon.prototype.XYBeaconHandler = function (CloudAdaptor,DataWrapper){ // Geolocation handler
 	cloudAdaptor = CloudAdaptor;
 	dataWrapper = DataWrapper;
-
-	console.log("XYBeacon.Prototype.XYBeaconHandler ", new Date());
+	//console.log("XYBeacon.Prototype.XYBeaconHandler ", new Date());
 };
 
-XYBeacon.prototype.Discovered = function(SensorKey, rssi, sensorDetails) {
-    console.log('XYBeacon ' + SensorKey + ' ' + rssi);
+XYBeacon.prototype.Discovered = function(sensorDetails, rssi) {
+    //console.log('XYBeacon ' + sensorDetails.SensorKey + ' ' + rssi);
     if(rssi > 0) {
         return;
     }
-    console.log("milliseconds " , +new Date());
-/*
-    if (previousRssiHashMap.has(SensorKey)) {
+    //console.log("milliseconds " , Date.now());
+    var senderId = sensorDetails.SensorKey;
+    if (previousRssiHashMap.has(senderId)) {
         var previousRssi = previousRssiHashMap.get(senderId);
         if (previousRssi.length < averageNumber) {
             previousRssi.add(rssi);
-            if (System.currentTimeMillis() - timestampHashMap.get(senderId) < maxUpdateTime) {
-                timestampHashMap.put(senderId, System.currentTimeMillis());
+            if (Date.now() - timestampHashMap.get(senderId) < config.RSSIDataIntervalMax) {
+                timestampHashMap.set(senderId, Date.now());
                 return;
             }
         }
     } else {
-        ArrayList<Integer> previousRssi = new ArrayList<>();
+        var previousRssi = new List();
         previousRssi.add(rssi);
-        previousRssiHashMap.put(senderId, previousRssi);
-        timestampHashMap.put(senderId, System.currentTimeMillis());
-        timestampLastSentHashMap.put(senderId, System.currentTimeMillis());
+        previousRssiHashMap.set(senderId, previousRssi);
+        timestampHashMap.set(senderId, Date.now());
+        timestampLastSentHashMap.set(senderId, Date.now());
         return;
     }
-    */
+    var rssiVal = 0;
+    //sort and average of mid values
+    var previousRssi = previousRssiHashMap.get(senderId);
+    previousRssi.sort();
+    //console.log("previousRssi ", previousRssi.toArray());
+    //console.log("rssi timestampHashMap ", timestampHashMap.toArray());
+    var length = previousRssi.length;
+    //console.log('length ' + length);
+    if (length >= averageNumber) {
+        for (i = 0; i < (length - 2); i++) {
+            if(i<2) {
+                previousRssi.shift();
+            } else {
+                rssiVal += previousRssi.shift();
+            }
+        }
+        rssi = rssiVal / (length - 4);
+        //console.log("1 rssiVal " + rssiVal + "rssi " + rssi);
+    } else if (length >= averageNumber/2) {
+        for (i = 0; i < (length - 1); i++) {
+            if(i<1) {
+                previousRssi.shift();
+            } else {
+                rssiVal += previousRssi.shift();
+            }
+        }
+        rssi = rssiVal / (length - 2);
+        //console.log("2 rssiVal " + rssiVal + "rssi " + rssi);
+    } else {
+        for (i = 0; i < length; i++) {
+            rssiVal += previousRssi.shift();
+        }
+        rssi = rssiVal / length;
+        //console.log("3 rssiVal " + rssiVal + "rssi " + rssi);
+    }
+    //console.log("averageRssi ", rssi);
+    // Moving Average
+    movingAverage(senderId, rssi, function(movingAvg){
+        rssi = movingAvg;
+        previousRssiHashMap.get(senderId).clear();
+        previousRssiHashMap.get(senderId).add(rssi);
+
+        if (timestampLastSentHashMap.has(senderId) && Date.now() - timestampLastSentHashMap.get(senderId) >= config.RSSIDataIntervalMin) {
+            //send message
+            console.log("movingAverage rssi for " + senderId + " is " + rssi);
+            sendRSSI(sensorDetails, rssi);
+        }
+    });
+
+            
 };
 
-function startSendingAtInterval() {
-	sendRSSIInterval = setInterval(sendRSSI, config.RSSIDataIntervalMax);
+function movingAverage(id, value, callback) {
+    var average = 0;
+    if (!movingAgerages) {
+        movingAgerages = new FastMap();
+        average = value;
+    } else if (movingAgerages.has(id)) {
+        average = movingAgerages.get(id);
+    } else {
+        average = value;
+    }
+    average = (average + value)/2.0;
+    movingAgerages.set(id, average);
+    callback(average);
 }
 
-var azureClientConnected = function() {
-	stopSendingAtInterval();
-	//sendRSSI();
-	startSendingAtInterval();
-}
-
-var azureClientDisconnected = function() {
-	stopSendingAtInterval();
-}
-
-var sendRSSI = function () {
-    console.log("send RSSI");
-	/*try {
-		if(groupList && groupList.length > 0) {
-			if (lat == 0 && lng == 0) {
-				lat = config.Latitude;
-				lng = config.Longitude;
-			}
-			console.log("Geolocation  SENT: " + lat + " " + lng);
-			//var json_data = {GroupIds:groupList.toArray(),Latitude:lat,Longitude:lng,Timestamp:new Date()};
-            var json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-														AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi};
-			cloudAdaptor(dataWrapper(json_data)); // pushing the data to cloud
-		} else {
-			console.log("Stop Sending RSSI, not sensor connected");
-			stopSendingAtInterval();
-		}
+function sendRSSI(SensorDetails, rssi) {
+    //console.log("send RSSI");
+	try {
+        var json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+            AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi,GatewayKey:config.MAC};
+		cloudAdaptor(dataWrapper(json_data)); // pushing the data to cloud
 	} catch (error) {
-		console.log(error);
-	}*/
+	    console.log(error);
+	}
 }
-
-var stopSendingAtInterval = function() {
-	clearInterval(sendRSSIInterval);
-}
-
-bus.on('azureClientConnected', azureClientConnected);
-bus.on('azureClientDisconnected', azureClientDisconnected);
 
 module.exports = XYBeacon;

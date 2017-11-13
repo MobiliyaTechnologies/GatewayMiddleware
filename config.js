@@ -31,7 +31,8 @@ ContinuousBLEConnection:0,	//0: Connect at intervals, 1: Continuous connection
 SimultaneousBLEConnections:4,
 BLEConnectionDuration:3500,
 BLEReconnectionInterval:5000,
-RSSIDataIntervalMax:1000,   //1 second
+RSSIDataIntervalMin:1000,   //1 second
+RSSIDataIntervalMax:10000,   //10 second
 MAC:"",
 Version:"1.05"
 };
