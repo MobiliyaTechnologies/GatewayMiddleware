@@ -137,7 +137,7 @@ function sendRSSI(SensorDetails, rssi) {
     //console.log("send RSSI");
 	try {
         var json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-            AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi,GatewayKey:config.MAC};
+            AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi,GatewayKey:config.MAC,Action:"IndoorPositioning"};
 		cloudAdaptor(dataWrapper(json_data)); // pushing the data to cloud
 	} catch (error) {
 	    console.log(error);
