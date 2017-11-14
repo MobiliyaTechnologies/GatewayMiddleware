@@ -111,7 +111,7 @@ XYBeacon.prototype.Discovered = function(sensorDetails, rssi) {
         if (timestampLastSentHashMap.has(senderId) && Date.now() - timestampLastSentHashMap.get(senderId) >= config.RSSIDataIntervalMin) {
             //send message
             console.log("movingAverage rssi for " + senderId + " is " + rssi);
-            sendRSSI(sensorDetails, rssi);
+            sendRSSI(sensorDetails, Math.round(rssi));
         }
     });
 
