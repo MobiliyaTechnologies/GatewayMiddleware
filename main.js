@@ -600,9 +600,5 @@ fs.readFile('./connectionTimeout.txt', 'utf8', function (err,data) {
     }
 });
 
-if (!config.DisableLogin) {
-	startAzureClient();
-} else {
-	startScanning();
-}
+startAzureClient();
 

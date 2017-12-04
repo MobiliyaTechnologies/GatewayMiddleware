@@ -1,0 +1,1 @@
+HostName=AssetIOTHub.azure-devices.net;DeviceId=54-BE-F7-65-E6-58;SharedAccessKey=vmzd248h1Z4nl0lQjU1KB4xQgY4ZJorPl++pTfDP1Nc=

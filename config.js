@@ -33,6 +33,6 @@ BLEConnectionDuration:3500,
 BLEReconnectionInterval:5000,
 Version:"1.05",
 OpenElectronWindow:false,
-DisableLogin:true
+DisableLogin:false
 };
 module.exports = config;
