@@ -44,6 +44,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 		  -->
 		  <div style="margin-top:10px;margin-bottom:10px;width=50" >
 			  <button id="submitButton" style="height:30px;width:150px" ng-click = "submit('click')" >Submit</button>
+			  <button id="submitButton" style="height:30px;width:150px" ng-click = "getLoginDetails(null,'SignUp')" >SignUp</button>
 			  <button id="resetButton" style="height:30px;width:150px;margin-left:50px" ng-click = "reset('click')" >Reset Gateway</button>
 		 	  <div ng-show="loader.loading"  >Signing in... Please wait.</div>
 		  </div>
@@ -94,6 +95,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                 callback(b2cSession);
             },
             signUp: function (config,callback) {
+
                 var applicationId = config.b2cApplicationId;
                 hello.init({
                     adB2CSignIn: applicationId,
@@ -253,7 +255,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                 //localStorage.setItem("signInSignUpPolicyName", $scope.config.signInSignUpPolicyName);
 				localStorage.setItem("redirect_uri", 'http://localhost:65159/redirect.html');
 			    $scope.saveTimeout($scope.config.timeout);
-				$scope.getLoginDetails(state);
+				$scope.getLoginDetails(state,'SignIn');
 				
 				/*var script = document.createElement('script');
                 script.setAttribute('type', 'text/javascript');
@@ -402,7 +404,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                         });
 
 			}
-			$scope.getLoginDetails=function(state){
+			$scope.getLoginDetails=function(state,type){
 			
 				url=$scope.config.restServer;
 				console.log("url :: " + url);
@@ -424,8 +426,10 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 						console.log("response.data.B2cSignUpInPolicyId " + response.data.B2cSignUpInPolicyId);
 						localStorage.setItem("b2cApplicationId", response.data.B2cClientId);
 						localStorage.setItem("tenantName", response.data.B2cTenant);
-						localStorage.setItem("signInPolicyName", response.data.B2cSignUpInPolicyId);
-						
+						localStorage.setItem("signInPolicyName", response.data.B2cSignInPolicyId);
+                        localStorage.setItem("signUpPolicyName", response.data.B2cSignUpPolicyId);
+                        //localStorage.setItem("signInPolicyName", 'B2C_1_SiIn');
+						//localStorage.setItem("signUpPolicyName", 'B2C_1_SiUp');
 						/*$scope.config.restServer=localStorage.getItem("restServer");
 						$scope.config.b2cApplicationId=localStorage.getItem("b2cApplicationId");
 						$scope.config.tenantName=localStorage.getItem("tenantName");
@@ -435,7 +439,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 						script.setAttribute('type', 'text/javascript');
 						script.setAttribute('src', './aadb2c.js');
 						document.head.appendChild(script);
-                        $scope.getConfig(state);
+                        $scope.getConfig(state,type);
                         $scope.loginAttempt = 0;
 					
                     }).catch(function (error) {
@@ -443,7 +447,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                             console.log("Login Details API Error :: ",error);
                             if($scope.loginAttempt === 1) {
                                 console.log("Second Attempt to Login...");
-                                $scope.submit('click');
+                                $scope.submit('click','SignIn');
                             } else {
                                 console.log("Could not login, please try again !");
                                 alert("Could not login, please try again !");
@@ -515,10 +519,11 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                         });
 			}
 
-			$scope.aadLogin=function(state){
-			
+			$scope.aadLogin=function(state,type){
+                
                 setTimeout (function() {
-				aadService.signIn($scope.config,function (b2cSession) {
+				
+                aadService.signIn($scope.config,function (b2cSession) {
 					if (!online(b2cSession) && state == 'click') {
 						aadService.policyLogin(helloNetwork.adB2CSignIn, loginDisplayType.Page);
                         //alert("at aadService.policyLogin");
@@ -532,14 +537,31 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                 }, 1000);
 			}
 			
-			$scope.getConfig=function(state){
+            $scope.signup=function() {
+                aadService.signUp($scope.config,function(){
+                    
+                });
+            }
+
+			$scope.getConfig=function(state,type){
 			
 				$scope.config.restServer=localStorage.getItem("restServer");
                 $scope.config.b2cApplicationId=localStorage.getItem("b2cApplicationId");
                 $scope.config.tenantName=localStorage.getItem("tenantName");
                 $scope.config.signInPolicyName=localStorage.getItem("signInPolicyName");
                 if($scope.config.restServer){
+                    if(type=='SignIn'){
 					$scope.aadLogin(state);
+                    }
+                    else
+                    { 
+                        setTimeout(function(){
+                                 aadService.signUp($scope.config,function(){
+                    
+                                });
+                        },1000);
+                      
+                    }
 				}
 			
 			}
@@ -579,7 +601,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
             
             $scope.enableResetButton(false);
             $scope.enableSubmitButton(false);
-			$scope.getConfig('intial');
+			$scope.getConfig('intial','SignIn');
 			$scope.showMacAddr();
 			$scope.showVersion(); 
 			$scope.showTimeout();

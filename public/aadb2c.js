@@ -1,7 +1,7 @@
 //These values need to be updated with the specific tenant and its policies.
 var tenantName = localStorage.getItem("tenantName");
 var signInPolicyName = localStorage.getItem("signInPolicyName");
-var signInSignUpPolicyName = localStorage.getItem("signInSignUpPolicyName");
+var signInSignUpPolicyName = localStorage.getItem("signUpPolicyName");
 var editProfilePolicyName = localStorage.getItem("editProfilePolicyName");
 var redirect_uri = localStorage.getItem("redirect_uri");
 //No need to modify the below values
