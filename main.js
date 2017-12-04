@@ -61,8 +61,8 @@ var isScanningStarted = false;
 var startedBLEApp = 0;
 var startScanningIntervalFunction;
 
-let appInsights = require('applicationinsights');
-let client = appInsights.client;
+//let appInsights = require('applicationinsights');
+//let client = appInsights.client;
 
 //Create an event handler:
 var myUpdateEventHandler = function () {
