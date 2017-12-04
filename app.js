@@ -44,11 +44,12 @@ try {
 		console.log(error);
 }
 
-var electron = require('electron');
-var app1 = electron.app;
-var BrowserWindow = electron.BrowserWindow;
 	
 if (config.OpenElectronWindow){
+
+	var electron = require('electron');
+	var app1 = electron.app;
+	var BrowserWindow = electron.BrowserWindow;
 	//Google API key
 	process.env.GOOGLE_API_KEY = "AIzaSyCnvrW9m3U2n0IRqG5JSd2vZy0Dch41WIQ";
 
