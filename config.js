@@ -32,6 +32,7 @@ SimultaneousBLEConnections:4,
 BLEConnectionDuration:3500,
 BLEReconnectionInterval:5000,
 Version:"1.05",
-OpenElectronWindow:false
+OpenElectronWindow:false,
+DisableLogin:true
 };
 module.exports = config;

@@ -44,7 +44,9 @@ try {
 		console.log(error);
 }
 
-	
+if (config.DisableLogin) {
+	require('./main')
+}
 if (config.OpenElectronWindow){
 
 	var electron = require('electron');
