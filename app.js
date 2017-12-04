@@ -30,6 +30,7 @@ var bodyParser = require('body-parser');
 var bus = require('./eventbus');
 //var open = require('opn');
 var cors = require('cors');
+var config = require('./config');
 
 console.log("Creating app insights client");
 let appInsights = require('applicationinsights');
@@ -42,33 +43,31 @@ try {
 		console.log('Error in initializing appInsights client.');
 		console.log(error);
 }
-//var { app, BrowserWindow } = require('electron')
-// OR
-// Three Lines
+
 var electron = require('electron');
 var app1 = electron.app;
 var BrowserWindow = electron.BrowserWindow;
+	
+if (config.OpenElectronWindow){
+	//Google API key
+	process.env.GOOGLE_API_KEY = "AIzaSyCnvrW9m3U2n0IRqG5JSd2vZy0Dch41WIQ";
 
-//Google API key
-//AIzaSyCnvrW9m3U2n0IRqG5JSd2vZy0Dch41WIQ
-process.env.GOOGLE_API_KEY = "AIzaSyCnvrW9m3U2n0IRqG5JSd2vZy0Dch41WIQ";
-
-var mainWindow = null;
-app1.commandLine.appendSwitch("ignore-certificate-errors");
-app1.on('ready', function() {
-	mainWindow = new BrowserWindow({ width: 700, height: 650,
-		show: true,
-		webPreferences: {
-	  	nodeIntegration: false,
-			webSecurity: false
+	var mainWindow = null;
+	app1.commandLine.appendSwitch("ignore-certificate-errors");
+	app1.on('ready', function() {
+		mainWindow = new BrowserWindow({ width: 700, height: 650,
+			show: true,
+			webPreferences: {
+			nodeIntegration: false,
+				webSecurity: false
+				}
 			}
-		}
-	);
-	//mainWindow.openDevTools();
-	mainWindow.loadURL('http://localhost:65159/');
-});
-app1.on('window-all-closed', app1.quit);
-
+		);
+		//mainWindow.openDevTools();
+		mainWindow.loadURL('http://localhost:65159/');
+	});
+	app1.on('window-all-closed', app1.quit);
+}
 
 require('./ws_server');
 //require('./ws_client');
@@ -113,14 +112,11 @@ app.get('/macaddress', function (req, res) {
     res.end( MAC );
 })
 app.get('/version', function (req, res) {
-    
-	var config = require('./config');
 	console.log( config.Version );
     res.end( config.Version );
 })
 
 app.get('/timeout', function (req, res) {
-    var config = require('./config');
     var BLEConnectionDuration = config.BLEConnectionDuration.toString();
     fs.readFile('./connectionTimeout.txt', 'utf8', function (err,data) {
         if (!err) {
@@ -131,7 +127,6 @@ app.get('/timeout', function (req, res) {
 });
 
 app.post('/timeout', function (req, res) {
-	var config = require('./config');
     config.BLEConnectionDuration = req.body.timeout;
     config.BLEReconnectionInterval = config.BLEConnectionDuration + 500;
 	fs.writeFileSync('./connectionTimeout.txt', config.BLEConnectionDuration, 'utf-8');
