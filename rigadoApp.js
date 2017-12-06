@@ -116,11 +116,11 @@ function getConnectionString(userId) {
 }
 
 function saveConnectionString(connectionString) {
-	console.log("connectionString", connectionString);
+	//console.log("connectionString", connectionString);
 	fs.writeFileSync('./' + connectionStringFile, connectionString , 'utf-8');
 }
 
 function saveCapabilities(capabilities) {
-	console.log("capabilities", capabilities);
-	fs.writeFileSync('./' + capabilitiesFile, capabilities , 'utf-8');
+	//console.log("capabilities", capabilities);
+	fs.writeFileSync('./' + capabilitiesFile, JSON.stringify(capabilities), 'utf-8');
 }
