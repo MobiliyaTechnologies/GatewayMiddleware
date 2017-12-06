@@ -5,6 +5,7 @@ var fs = require('fs');
 var connectionStringFile = "connectionString.txt";
 var capabilitiesFile = "capabilities.json";
 var MAC = null;
+const readline = require('readline');
 /*
 //Creating app insights client
 console.log("Creating app insights client");
@@ -54,7 +55,6 @@ function login() {
     if(MAC) {
         console.log("User Login Required, please enter required details");
         //Read UserId and GatewayKey from console input
-        const readline = require('readline');
         const rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout
@@ -100,6 +100,17 @@ function getConnectionString(userId) {
             startScanning();
         } else {
             console.log("Error in login", error);
+            const rl = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
+            rl.question('Do you want to try again? (yes/no): ', (answer) => {
+                rl.close();
+                // Yes: ask userId, No: exit
+                if (answer == "yes" || answer == "YES" || answer == "Yes") {
+                    login();
+                }
+            });
         }
     })
 }
