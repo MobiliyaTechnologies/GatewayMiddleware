@@ -29,8 +29,8 @@ Longitude:-122.2090137,
 GPSDataInterval:600000, //10 min
 ContinuousBLEConnection:0,	//0: Connect at intervals, 1: Continuous connection
 SimultaneousBLEConnections:4,
-BLEConnectionDuration:3500,
-BLEReconnectionInterval:5000,
+BLEConnectionDuration:5000,
+BLEReconnectionInterval:6000,
 Version:"1.05",
 OpenElectronWindow:false,
 DisableLogin:false
