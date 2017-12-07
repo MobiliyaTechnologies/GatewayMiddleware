@@ -6,6 +6,7 @@ var connectionStringFile = "connectionString.txt";
 var capabilitiesFile = "capabilities.json";
 var MAC = null;
 const readline = require('readline');
+var restServerUrl;
 /*
 //Creating app insights client
 console.log("Creating app insights client");
@@ -26,7 +27,8 @@ var isConnectionStringExists = function() {
 	  if (err) {
 			console.log("Connection String Does Not Exists !!");
 		    //console.log(err);
-            login();
+            getRestUrl();
+            //login();
 	  } else {
 			console.log("Connection String Exists !!");
             startScanning();
@@ -70,7 +72,39 @@ function login() {
     }
 }
 
+function getRestUrl() {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    rl.question('Enter Rest Server URL for your Domain: ', (answer) => {
+        rl.close();
+        // Yes: ask userId, No: exit
+        if (answer) {
+            console.log("answer:",answer);
+            if (answer == "") {
+                console.log("URL cannot be empty");
+                getRestUrl();
+            }
+            if (answer.charAt(answer.length-1) == "/") {
+                answer = answer.substring(0, answer.length-1);
+            }
+            restServerUrl = answer;
+            login();
+        } else {
+            console.log("Invalid URL");
+            getRestUrl();
+        }
+    });
+}
+
 function getConnectionString(userId) {
+    console.log("ServerUrl", restServerUrl);
+    if (restServerUrl == undefined || restServerUrl.length<1) {
+        getRestUrl();
+        return;
+    }
+
     // Set the headers
     var headers = {
         'User-Agent': 'RigadoIoTGateway',
@@ -79,7 +113,7 @@ function getConnectionString(userId) {
 
     // Configure the request
     var options = {
-        url: 'https://assetmonitoring.azurewebsites.net/Api/AnonymousIotHubGateway',
+        url: restServerUrl + '/Api/AnonymousIotHubGateway',
         method: 'POST',
         headers: headers,
         form: {'UserId': userId, 'GatewayKey': MAC}
@@ -89,7 +123,7 @@ function getConnectionString(userId) {
     request(options, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             // Print out the response body
-            console.log("body", body);
+            //console.log("body", body);
             body = JSON.parse(body);
             //console.log("body", body);
             //save connection string
@@ -99,18 +133,41 @@ function getConnectionString(userId) {
             //start scanning
             startScanning();
         } else {
-            console.log("Error in login", error);
-            const rl = readline.createInterface({
-                input: process.stdin,
-                output: process.stdout
-            });
-            rl.question('Do you want to try again? (yes/no): ', (answer) => {
-                rl.close();
-                // Yes: ask userId, No: exit
-                if (answer == "yes" || answer == "YES" || answer == "Yes") {
-                    login();
+            if (!response) {
+                console.log("Something went wrong !!");
+                console.log("Please verify your Rest Server URL");
+                const rl = readline.createInterface({
+                    input: process.stdin,
+                    output: process.stdout
+                });
+                rl.question('Do you want to try again? (yes/no): ', (answer) => {
+                    rl.close();
+                    // Yes: ask userId, No: exit
+                    if (answer == "yes" || answer == "YES" || answer == "Yes") {
+                        getRestUrl();
+                    }
+                });
+            } else {
+                if (response.statusCode) {
+                    body = JSON.parse(body);
+                    console.log(body.Message);
+                } else {
+                    console.log("Error in login. Error:", error);
+                    console.log("Please check whether Gateway is registered or not");
                 }
-            });
+                //console.log("Error in login", error);
+                const rl = readline.createInterface({
+                    input: process.stdin,
+                    output: process.stdout
+                });
+                rl.question('Do you want to try again? (yes/no): ', (answer) => {
+                    rl.close();
+                    // Yes: ask userId, No: exit
+                    if (answer == "yes" || answer == "YES" || answer == "Yes") {
+                        login();
+                    }
+                });
+            }
         }
     })
 }
