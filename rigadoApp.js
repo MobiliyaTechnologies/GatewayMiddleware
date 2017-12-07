@@ -99,7 +99,7 @@ function getRestUrl() {
 }
 
 function getConnectionString(userId) {
-    console.log("ServerUrl", restServerUrl);
+    //console.log("ServerUrl", restServerUrl);
     if (restServerUrl == undefined || restServerUrl.length<1) {
         getRestUrl();
         return;

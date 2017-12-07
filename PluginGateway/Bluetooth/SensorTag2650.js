@@ -113,7 +113,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 				}
 			});
 
-			/*peripheral.updateRssi(function(error, rssi){
+			peripheral.updateRssi(function(error, rssi){
 				console.log("update RSSI");
 				if(error) {
 					appInsightsClient.trackException(error);
@@ -132,7 +132,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 														AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi};
 					CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 				}
-			});*/
+			});
 			
 			console.log('discoverServices for '	+ peripheral.uuid);
 
