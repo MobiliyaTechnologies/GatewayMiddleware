@@ -1,6 +1,7 @@
 var request = require('request');
 var config = require('./config');
 var getmac = require('getmac');
+var https = require("https");
 var fs = require('fs');
 var connectionStringFile = "connectionString.txt";
 var capabilitiesFile = "capabilities.json";
@@ -108,22 +109,25 @@ function getConnectionString(userId) {
     // Set the headers
     var headers = {
         'User-Agent': 'RigadoIoTGateway',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+	    'UserId': userId
     }
 
     // Configure the request
     var options = {
-        url: restServerUrl + '/Api/AnonymousIotHubGateway',
+        url: restServerUrl + '/api/ConsoleIotHubGateway',
         method: 'POST',
         headers: headers,
-        form: {'UserId': userId, 'GatewayKey': MAC}
+        form: {'GatewayKey': MAC},
+	    key: fs.readFileSync('./certs/client1-key.pem'), // Certificate Key.
+	    cert: fs.readFileSync('./certs/client1-crt.pem') // Certificate.
     }
 
     // Start the request
     request(options, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             // Print out the response body
-            //console.log("body", body);
+            console.log("body", body);
             body = JSON.parse(body);
             //console.log("body", body);
             //save connection string
