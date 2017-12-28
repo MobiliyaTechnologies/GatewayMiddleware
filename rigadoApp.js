@@ -152,7 +152,8 @@ function getConnectionString(userId) {
                     }
                 });
             } else {
-                if (response.statusCode) {
+                if (request.statusCode != undefined) {
+                    console.log("statusCode", request.statusCode);
                     console.log(body);
                     try {
                         body = JSON.parse(body);

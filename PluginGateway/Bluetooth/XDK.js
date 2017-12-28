@@ -93,7 +93,7 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 				}
 			});
 
-			peripheral.updateRssi(function(error, rssi){
+			/*peripheral.updateRssi(function(error, rssi){
 				console.log("update RSSI");
 				if(error) {
 					appInsightsClient.trackException(error);
@@ -111,7 +111,7 @@ XDK.prototype.XDKHandle = function (peripheral,CloudAdaptor,DataWrapper,SensorDe
 				var json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 														AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi};
 				CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
-			});
+			});*/
 			
 			
 			peripheral.discoverServices(null,function(error, services) {// service discovery

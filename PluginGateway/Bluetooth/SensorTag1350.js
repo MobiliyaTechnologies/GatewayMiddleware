@@ -87,7 +87,7 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 			}
 		});
 
-		peripheral.updateRssi(function(error, rssi){
+		/*peripheral.updateRssi(function(error, rssi){
 			console.log("update RSSI");
 			if(error) {
 				console.log("updateRSSI error");
@@ -104,7 +104,7 @@ SensorTag1350.prototype.SensorTagHandle1350 = function (peripheral,CloudAdaptor,
 			var json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 													 AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi};
 			CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
-		});
+		});*/
 		
 		peripheral.discoverServices(null,function(error, services) { // service discovery
 			if(error) {
