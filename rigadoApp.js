@@ -127,7 +127,7 @@ function getConnectionString(userId) {
     request(options, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             // Print out the response body
-            console.log("body", body);
+            //console.log("body", body);
             body = JSON.parse(body);
             //console.log("body", body);
             //save connection string
@@ -153,8 +153,13 @@ function getConnectionString(userId) {
                 });
             } else {
                 if (response.statusCode) {
-                    body = JSON.parse(body);
-                    console.log(body.Message);
+                    console.log(body);
+                    try {
+                        body = JSON.parse(body);
+                        console.log(body.Message);
+                    } catch (error) {
+                        console.log(error);
+                    }
                 } else {
                     console.log("Error in login. Error:", error);
                     console.log("Please check whether Gateway is registered or not");
