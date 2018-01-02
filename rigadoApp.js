@@ -119,8 +119,8 @@ function getConnectionString(userId) {
         method: 'POST',
         headers: headers,
         form: {'GatewayKey': MAC},
-	    key: fs.readFileSync('./certs/client1-key.pem'), // Certificate Key.
-	    cert: fs.readFileSync('./certs/client1-crt.pem') // Certificate.
+	//key: fs.readFileSync('./certs/client1-key.pem'), // Certificate Key.
+	//cert: fs.readFileSync('./certs/client1-crt.pem') // Certificate.
     }
 
     // Start the request
