@@ -226,9 +226,11 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
             if(isEnable) { 
                 document.getElementById("submitButton").style.backgroundColor = "#0e98f9"
                 document.getElementById("submitButton").style.color = "#ffffff";
+				document.getElementById("submitButton").disabled = false;
             } else {
                 document.getElementById("submitButton").style.backgroundColor = "#f3f3f3"
-                document.getElementById("submitButton").style.color = "#151515";
+                document.getElementById("submitButton").style.color = "#c0c0c0";
+				document.getElementById("submitButton").disabled = true;
             }
         }
 
@@ -236,9 +238,11 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
             if(isEnable) { 
                 document.getElementById("resetButton").style.backgroundColor = "#0e98f9"
                 document.getElementById("resetButton").style.color = "#ffffff";
+				document.getElementById("resetButton").disabled = false;
             } else {
                 document.getElementById("resetButton").style.backgroundColor = "#f3f3f3";
-                document.getElementById("resetButton").style.color = "#151515";
+                document.getElementById("resetButton").style.color = "#c0c0c0";
+				document.getElementById("resetButton").disabled = true;
             }
         }
 		 $scope.submit=function(state){
@@ -269,7 +273,8 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                    $scope.deleteStoredFiles();
             });
            $rootScope.$on('deleteStoredFiles', function(event, data) {
-                   $scope.deleteStoredFiles();
+                $scope.deleteStoredFiles();			   	
+	            $scope.enableResetButton(false);
             });
            $rootScope.$on('enableLoginButton', function(event, data) {
                    $scope.enableSubmitButton(true);
@@ -312,6 +317,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                         .catch(function (error) {
                             console.log("Connection String Error ::",error);
                             alert("Something went wrong, please check registered GatewayId. [" + error.statusText + "]!\nPlease SignIn again.");
+							$scope.enableSubmitButton(true);
                         });
 
                 }
@@ -577,7 +583,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
                         });    
             }
             
-            $scope.enableResetButton(false);
+            $scope.enableResetButton(true);
             $scope.enableSubmitButton(false);
 			$scope.getConfig('intial');
 			$scope.showMacAddr();
