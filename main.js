@@ -378,6 +378,9 @@ function BLEApp () {
 				}
 			} 
 		} else {
+			if(peripheral.advertisement.localName == undefined) {
+				return;
+			}
 			if (peripheral.advertisement.localName.indexOf("SensorTag") !== -1) {
 				index = 1;
 			} else if (peripheral.advertisement.localName.indexOf("ThunderBaord") !== -1) {
@@ -510,7 +513,7 @@ function connectPeripheral(peripheral) {
 					return;
 				} else {
 					console.log(SensorId  + " is whitelisted");
-					if (whitelistContentAll[SensorId].SensorType == "SensorTag2650" || 
+					if ((shouldCheckSensorWhitelist && whitelistContentAll[SensorId].SensorType == "SensorTag2650") || 
 						(!shouldCheckSensorWhitelist && 
 							peripheral.advertisement.localName.indexOf("SensorTag") !== -1 && 
 							peripheral.advertisement.localName.indexOf("2650") !== -1
@@ -520,7 +523,7 @@ function connectPeripheral(peripheral) {
 						//var ST_2650_CloudAdaptor = new CloudAdaptor();
 						var ST_2650_Handle = new SensorTag2650();
 						var thisSensorCapabilities = [];
-						if(SensorCapabilities != undefined) {
+						if(SensorCapabilities != undefined && whitelistContentAll != undefined) {
 							if(SensorCapabilities.hasOwnProperty(whitelistContentAll[SensorId].SensorType)) {
 								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType].SensorCapabilities;
 								//console.log("thisSensorCapabilities: " + JSON.stringify(thisSensorCapabilities));
@@ -533,7 +536,7 @@ function connectPeripheral(peripheral) {
 						ST_2650_Handle.SensorTagHandle2650(peripheral,CloudAdapterInstance.AzureHandle,ST_2650_DS.JSON_data,
 							sensorDetails,thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 						
-					} else if (whitelistContentAll[SensorId].SensorType == "SensorTag1350" || 
+					} else if ((shouldCheckSensorWhitelist && whitelistContentAll[SensorId].SensorType == "SensorTag1350") || 
 						(!shouldCheckSensorWhitelist && 
 							peripheral.advertisement.localName.indexOf("SensorTag") !== -1 && 
 							peripheral.advertisement.localName.indexOf("1350") !== -1
@@ -554,7 +557,7 @@ function connectPeripheral(peripheral) {
 						}
 						ST1350_Handle.SensorTagHandle1350(peripheral,CloudAdapterInstance.AzureHandle,ST1350_DS.JSON_data,
 							sensorDetails,thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-					} else if (whitelistContentAll[SensorId].SensorType == "Bosch-XDK" || 
+					} else if ((shouldCheckSensorWhitelist && whitelistContentAll[SensorId].SensorType == "Bosch-XDK") || 
 						(!shouldCheckSensorWhitelist && 
 							peripheral.advertisement.localName.indexOf("Bosch") !== -1 && 
 							peripheral.advertisement.localName.indexOf("XDK") !== -1
@@ -575,7 +578,7 @@ function connectPeripheral(peripheral) {
 						}
 						XDK_Handle.XDKHandle(peripheral,CloudAdapterInstance.AzureHandle,XDK_DS.JSON_data,
 							sensorDetails,thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-					} else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-React" || 
+					} else if ((shouldCheckSensorWhitelist && whitelistContentAll[SensorId].SensorType == "ThunderBoard-React") || 
 						(!shouldCheckSensorWhitelist && 
 							peripheral.advertisement.localName.indexOf("ThunderBoard") !== -1 && 
 							peripheral.advertisement.localName.indexOf("React") !== -1
@@ -597,7 +600,7 @@ function connectPeripheral(peripheral) {
 						}
 						ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardReact_DS.JSON_data,
 							sensorDetails,thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-					} else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-Sense" || 
+					} else if ((shouldCheckSensorWhitelist && whitelistContentAll[SensorId].SensorType == "ThunderBoard-Sense") || 
 						(!shouldCheckSensorWhitelist && 
 							peripheral.advertisement.localName.indexOf("ThunderBoard") !== -1 && 
 							peripheral.advertisement.localName.indexOf("Sense") !== -1

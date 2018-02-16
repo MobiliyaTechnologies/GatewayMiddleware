@@ -82,12 +82,15 @@ var getConnectionString = function() {
 	  if (err) {
 			console.log("Connection String Does Not Exists !!");
 			bus.emit('log',"Connection String Does Not Exists !!");
-			console.log("Please add connection string in file and click Submit button !!");
-			bus.emit('log',"Please add connection string in file and click Submit button !!");
+			console.log("Please add connection string in file and click Restart Gateway !!");
+			bus.emit('log',"Please add connection string in file and click Restart Gateway !!");
 			//console.log("open url 'http://localhost:65159/' in browser");
 			//bus.emit('log',"Please Login !");
-		 
-		  console.log(err);
+			 
+			//create empty file for EM connection string
+			fs.writeFileSync('./'+file, "" , 'utf-8');
+
+		  	console.log(err);
 	  } else {
 			console.log("Connection String Exists !!");
 			bus.emit('log',"Connection String Exists !!");
@@ -148,7 +151,7 @@ app.post('/connectionstring', function (req, res) {
 	console.log(req.body);
 	connectionString = req.body.connectionString;
 	console.log(connectionString);
-	fs.writeFileSync('./connectionString.txt', connectionString , 'utf-8');
+	fs.writeFileSync('./'+file, connectionString , 'utf-8');
 
 	require('./main');
   res.sendStatus(200);
@@ -196,6 +199,14 @@ app.get('/resetgateway', function (req, res) {
 	});
 	
 	bus.emit('log', '\n--------------------------\nGateway has been reset.\nPlease Restart Gateway !!!\n--------------------------\n');
+	res.sendStatus(200);
+})
+
+app.get('/restart', function (req, res) {
+	console.log("restart api call");
+		
+	setTimeout(getConnectionString, 500);
+	bus.emit('log', '\n---------------\nRestarting Gateway\n---------------\n');
 	res.sendStatus(200);
 })
 

@@ -17,7 +17,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 <html>
    
    <head>
-      <title>Asset Monitoring Configuration</title>
+      <title>EM Gateway</title>
       <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
 	  <script src = "hello.all.js"></script>
 	   <script src="ng-websocket.js"></script>
@@ -26,12 +26,12 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
    <body>	
 	   
       <div style="margin-left:20px;" ng-app = "gatewayApp" ng-controller = "mainController">
-		<h2>Asset Monitoring Configuration</h2>
+		<h2>EM Gateway</h2>
 
 		  
 		     <p>Gateway: {{gatewayMac}}</p>
 		     <p>Version: {{gatewayVersion}}</p>
-         Enter Rest Server Url: <input style="width:450px" type = "text" ng-model = "config.restServer"><br><br>
+        <!-- Enter Rest Server Url: --><input ng-hide="true" style="width:450px" type = "text" ng-model = "config.restServer"><br><br>
         Enter timeout (ms) : <select id="timeout" ng-model="config.timeout">
         <option value=3500>3500</option>
         <option value=5500>5500</option>
@@ -44,7 +44,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 		  -->
 		  <div style="margin-top:10px;margin-bottom:10px;width=50" >
 			  <button id="start" style="height:30px;width:150px" ng-click = "start()" >Start</button>
-		          <button id="submitButton" style="height:30px;width:150px" ng-click = "submit('click')" >Submit</button>
+		      <button id="submitButton" ng-hide="true" style="height:30px;width:150px" ng-click = "submit('click')" >Submit</button>
 			  <button id="resetButton" style="height:30px;width:150px;margin-left:50px" ng-click = "reset('click')" >Reset Gateway</button>
 		 	  <div ng-show="loader.loading"  >Signing in... Please wait.</div>
 		  </div>
@@ -601,7 +601,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 			 
 			 
 		var ws = $websocket.$new('ws://localhost:8080'); // instance of ngWebsocket, handled by $websocket service
-		$scope.data='Initializing Asset Tracking & Monitoring\nPlease Wait\n';
+		$scope.data='Initializing EM Gateway\nPlease Wait\n';
         ws.$on('$open', function () {
             console.log('Websocket is open!');
 			
