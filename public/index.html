@@ -43,7 +43,8 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 		 Enter B2c Sign In Policy: <input type = "text" ng-model = "config.signInPolicyName"><br>
 		  -->
 		  <div style="margin-top:10px;margin-bottom:10px;width=50" >
-			  <button id="submitButton" style="height:30px;width:150px" ng-click = "submit('click')" >Submit</button>
+			  <button id="start" style="height:30px;width:150px" ng-click = "start()" >Start</button>
+		          <button id="submitButton" style="height:30px;width:150px" ng-click = "submit('click')" >Submit</button>
 			  <button id="resetButton" style="height:30px;width:150px;margin-left:50px" ng-click = "reset('click')" >Reset Gateway</button>
 		 	  <div ng-show="loader.loading"  >Signing in... Please wait.</div>
 		  </div>
@@ -262,6 +263,19 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 				$scope.aadLogin(state);
 				*/
 		   }
+           $scope.start=function() {
+               $http({
+                        url: 'http://localhost:65159/restart',
+                        dataType: 'json',
+                        method: 'GET',
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    }).then(function (response) {
+                       						
+                    }).catch(function (error) {
+                });
+           }
            $scope.reset=function() {
                aadService.policyLogout(helloNetwork.adB2CSignIn, null);
            }

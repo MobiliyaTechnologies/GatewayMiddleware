@@ -18,9 +18,9 @@
 
 // main contanins the control flow only, (which inculdes whitelisting logic, cloud adaptor initialisation, and wireless protocol initialisation(BLE,ZIGBEE))
 //      rest all device specific libraries are plugin for more information go to specific imports
+
 var noble = require('noble');
 var config = require('./config');
-//var localServer = require('./LocalServer');
 var SensorTag2650 = require('./PluginGateway/Bluetooth/SensorTag2650');
 var SensorTag1350 = require('./PluginGateway/Bluetooth/SensorTag1350');
 var ThunderboardReact = require('./PluginGateway/Bluetooth/ThunderReact');
@@ -32,6 +32,7 @@ var SensorDataStructure = require('./PluginGateway/SensorDataStructure/Json');
 var CloudLed = require('./PluginGateway/Cloud/CloudLed');
 var whitelistAddressAll;
 var whitelistContentAll;
+var shouldCheckSensorWhitelist = false;
 var UpdateIP = require('./PluginGateway/Cloud/UpdateIP');
 var GetWhiteList = require('./PluginGateway/Cloud/GetWhiteList');
 const CompatibleSensors = [];
@@ -103,6 +104,8 @@ var startAzureClient = function initAzureClinet() {
 		//BLEApp();
 		if(whitelistAddressAll != undefined && whitelistAddressAll != null && whitelistAddressAll.length > 0) {
 			startScanning();
+		} else if(!shouldCheckSensorWhitelist) {
+			startScanning();
 		}
 	});
 }
@@ -150,7 +153,7 @@ function updateSensorList() {
 			}
 		}
 	} else {
-		console.log("Whitelisted sensor lint not available");
+		console.log("Whitelisted sensor list not available");
 		bus.emit('log', "Whitelisted sensor list not available. If sensors exist, click submit again to sync.");
 		if(isScanningStarted == true) {
 			stopScanning();	
@@ -259,7 +262,7 @@ function isPeripheralConnected(peripheralId) {
 	return found;
 }
 
-updateSensorList();
+//updateSensorList();
 updateSensorTypes();
 getSensorUnit();
 
@@ -360,18 +363,33 @@ function BLEApp () {
 	noble.on('discover',function(peripheral) { 
 		//console.log(peripheral)
 		// search for the local devices at, if it is a whitelisted address, connect to its specific sensor library
-		var index = whitelistAddressAll.indexOf(peripheral.id);
-		if (index == -1) {
-			// condition when the device found is not in whitelist
-			console.log('Found device with local name which is not a whitelist : '+ peripheral.id);
-			//bus.emit('log','Found device with local name which is not a whitelist : '+ peripheral.id);
-			//create a array for the devices which are discovered now, but may have been whitelisted in runtime later
-			// NOTE : It may create large memory if so many decvices are discovered over time, should apply filter in the device name
-			if (CompatibleSensors.indexOf(peripheral.advertisement.localName) !== -1){
-				DiscoveredPeripheral.push(peripheral);
-				//console.log(DiscoveredPeripheral);
-			}
+		var index = -1;
+		if (shouldCheckSensorWhitelist) {
+			index = whitelistAddressAll.indexOf(peripheral.id);
+			if (index == -1) {
+				// condition when the device found is not in whitelist
+				console.log('Found device with local name which is not a whitelist : '+ peripheral.id);
+				//bus.emit('log','Found device with local name which is not a whitelist : '+ peripheral.id);
+				//create a array for the devices which are discovered now, but may have been whitelisted in runtime later
+				// NOTE : It may create large memory if so many decvices are discovered over time, should apply filter in the device name
+				if (CompatibleSensors.indexOf(peripheral.advertisement.localName) !== -1){
+					DiscoveredPeripheral.push(peripheral);
+					//console.log(DiscoveredPeripheral);
+				}
+			} 
 		} else {
+			if (peripheral.advertisement.localName.indexOf("SensorTag") !== -1) {
+				index = 1;
+			} else if (peripheral.advertisement.localName.indexOf("ThunderBaord") !== -1) {
+				index = 2;
+			} else if (peripheral.advertisement.localName.indexOf("BoschXDK") !== -1) {
+				index = 3;
+			} else {
+				console.log('Found device with local name which is not supported : '+ peripheral.id + " "+ 
+				peripheral.advertisement.localName);
+			}
+		}
+		if(index != -1) {
 			// check for particular case of the whitelist address
 			console.log(peripheral.id);
 			if (config.ContinuousBLEConnection === 0) {
@@ -435,7 +453,8 @@ function BLEApp () {
         console.log("Scanning to start soon in " + BLEReconnectionInterval + " ms");
 		if(IsBluetoothPoweredOn && IsAzureClientConnected) {
 			clearTimeout(startScanningIntervalFunction);
-			if(whitelistAddressAll!=undefined && whitelistAddressAll!=null && whitelistAddressAll.length>0) {
+			if((whitelistAddressAll!=undefined && whitelistAddressAll!=null && whitelistAddressAll.length>0) ||
+				!shouldCheckSensorWhitelist) {
 				startScanningIntervalFunction = setTimeout(function() {
 					if(IsBluetoothPoweredOn) {
 						noble.startScanning(null,allowDuplicates);
@@ -487,11 +506,15 @@ function connectPeripheral(peripheral) {
 			console.log("List POP: ", peripheral.id);
 				//bus.emit('log',"Whitelisted device found: " + peripheral.id);
 				var SensorId = peripheral.id.toLowerCase();
-				if(whitelistContentAll[SensorId] == undefined) {
+				if(shouldCheckSensorWhitelist && whitelistContentAll[SensorId] == undefined) {
 					return;
 				} else {
 					console.log(SensorId  + " is whitelisted");
-					if (whitelistContentAll[SensorId].SensorType == "SensorTag2650"){
+					if (whitelistContentAll[SensorId].SensorType == "SensorTag2650" || 
+						(!shouldCheckSensorWhitelist && 
+							peripheral.advertisement.localName.indexOf("SensorTag") !== -1 && 
+							peripheral.advertisement.localName.indexOf("2650") !== -1
+						)){
 						console.log(SensorId  + " is SensorTag2650");
 						var ST_2650_DS = new SensorDataStructure();
 						//var ST_2650_CloudAdaptor = new CloudAdaptor();
@@ -503,9 +526,18 @@ function connectPeripheral(peripheral) {
 								//console.log("thisSensorCapabilities: " + JSON.stringify(thisSensorCapabilities));
 							}
 						}
-						ST_2650_Handle.SensorTagHandle2650(peripheral,CloudAdapterInstance.AzureHandle,ST_2650_DS.JSON_data,whitelistContentAll[SensorId],
-														   thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-					} else if (whitelistContentAll[SensorId].SensorType == "SensorTag1350"){
+						var sensorDetails = null;
+						if(shouldCheckSensorWhitelist) {
+							sensorDetails = whitelistContentAll[SensorId];
+						}
+						ST_2650_Handle.SensorTagHandle2650(peripheral,CloudAdapterInstance.AzureHandle,ST_2650_DS.JSON_data,
+							sensorDetails,thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+						
+					} else if (whitelistContentAll[SensorId].SensorType == "SensorTag1350" || 
+						(!shouldCheckSensorWhitelist && 
+							peripheral.advertisement.localName.indexOf("SensorTag") !== -1 && 
+							peripheral.advertisement.localName.indexOf("1350") !== -1
+						)){
 						console.log(SensorId  + " is SensorTag1350");
 						var ST1350_DS = new SensorDataStructure();
 						//var ST1350_CloudAdaptor = new CloudAdaptor();
@@ -516,9 +548,17 @@ function connectPeripheral(peripheral) {
 								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType].SensorCapabilities;
 							}
 						}
-						ST1350_Handle.SensorTagHandle1350(peripheral,CloudAdapterInstance.AzureHandle,ST1350_DS.JSON_data,whitelistContentAll[SensorId],
-														  thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-					} else if (whitelistContentAll[SensorId].SensorType == "Bosch-XDK"){
+						var sensorDetails = null;
+						if(shouldCheckSensorWhitelist) {
+							sensorDetails = whitelistContentAll[SensorId];
+						}
+						ST1350_Handle.SensorTagHandle1350(peripheral,CloudAdapterInstance.AzureHandle,ST1350_DS.JSON_data,
+							sensorDetails,thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+					} else if (whitelistContentAll[SensorId].SensorType == "Bosch-XDK" || 
+						(!shouldCheckSensorWhitelist && 
+							peripheral.advertisement.localName.indexOf("Bosch") !== -1 && 
+							peripheral.advertisement.localName.indexOf("XDK") !== -1
+						)){
 						console.log(SensorId  + " is Bosch-XDK");
 						var XDK_DS = new SensorDataStructure();
 						//var XDK_CloudAdaptor = new CloudAdaptor();
@@ -529,9 +569,17 @@ function connectPeripheral(peripheral) {
 								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType].SensorCapabilities;
 							}
 						}
-						XDK_Handle.XDKHandle(peripheral,CloudAdapterInstance.AzureHandle,XDK_DS.JSON_data,whitelistContentAll[SensorId],
-											 thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-					} else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-React"){
+						var sensorDetails = null;
+						if(shouldCheckSensorWhitelist) {
+							sensorDetails = whitelistContentAll[SensorId];
+						}
+						XDK_Handle.XDKHandle(peripheral,CloudAdapterInstance.AzureHandle,XDK_DS.JSON_data,
+							sensorDetails,thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+					} else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-React" || 
+						(!shouldCheckSensorWhitelist && 
+							peripheral.advertisement.localName.indexOf("ThunderBoard") !== -1 && 
+							peripheral.advertisement.localName.indexOf("React") !== -1
+						)){
 						console.log(SensorId  + " is ThunderBoard-React");
 					//if (peripheral.id == "000b571c53ae"){ // for testing the sensor locally without whitelisting
 						var ThunderboardReact_DS = new SensorDataStructure();
@@ -543,9 +591,17 @@ function connectPeripheral(peripheral) {
 								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType].SensorCapabilities;
 							}
 						}
-						ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardReact_DS.JSON_data,whitelistContentAll[SensorId],
-																		thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
-					} else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-Sense"){
+						var sensorDetails = null;
+						if(shouldCheckSensorWhitelist) {
+							sensorDetails = whitelistContentAll[SensorId];
+						}
+						ThunderboardReact_Handle.ThunderboardReactHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardReact_DS.JSON_data,
+							sensorDetails,thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+					} else if (whitelistContentAll[SensorId].SensorType == "ThunderBoard-Sense" || 
+						(!shouldCheckSensorWhitelist && 
+							peripheral.advertisement.localName.indexOf("ThunderBoard") !== -1 && 
+							peripheral.advertisement.localName.indexOf("Sense") !== -1
+						)){
 						console.log(SensorId  + " is ThunderBoard-Sense");
 						var ThunderboardSense_DS = new SensorDataStructure();
 						//var ThunderboardSense_CloudAdaptor = new CloudAdaptor();
@@ -556,8 +612,12 @@ function connectPeripheral(peripheral) {
 								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType].SensorCapabilities;
 							}
 						}
-						ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardSense_DS.JSON_data,whitelistContentAll[SensorId],
-																		 thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
+						var sensorDetails = null;
+						if(shouldCheckSensorWhitelist) {
+							sensorDetails = whitelistContentAll[SensorId];
+						}
+						ThunderboardSense_Handle.ThunderboardSenseHandle(peripheral,CloudAdapterInstance.AzureHandle,ThunderboardSense_DS.JSON_data,
+							sensorDetails,thisSensorCapabilities,Capabilities,BLEConnectionDuration,config.ContinuousBLEConnection);
 					} else{
 						//console.log(peripheral);
 						// logs the issue when the particular BLE device is whitelisted but its corresponding BLE library is not found

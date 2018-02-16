@@ -82,8 +82,8 @@ var getConnectionString = function() {
 	  if (err) {
 			console.log("Connection String Does Not Exists !!");
 			bus.emit('log',"Connection String Does Not Exists !!");
-			console.log("Please Login !!");
-			bus.emit('log',"Please Login !!");
+			console.log("Please add connection string in file and click Submit button !!");
+			bus.emit('log',"Please add connection string in file and click Submit button !!");
 			//console.log("open url 'http://localhost:65159/' in browser");
 			//bus.emit('log',"Please Login !");
 		 

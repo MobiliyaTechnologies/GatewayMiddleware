@@ -24,7 +24,7 @@ var isDisconnectHandlerCalled = false;
 let appInsights = require('applicationinsights');
 let appInsightsClient = appInsights.client;
 
-SensorTag2650DisconnectHandler = function(peripheral,GroupId) {
+SensorTag2650DisconnectHandler = function(peripheral) {
 	console.log("Called SensorTag2650 DisconnectHandler time ", new Date());
 	isDisconnectHandlerCalled = true;
 	peripheral.disconnect(function(error){
@@ -42,7 +42,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 	if(ContinuousBLEConnection===0) {
 		console.log("SetTiomout  for DisconnectHandler time ", new Date() );
 		isDisconnectHandlerCalled = false;
-		disconnectHandler = setTimeout(SensorTag2650DisconnectHandler,BLEConnectionDuration, peripheral,SensorDetails.GroupId);
+		disconnectHandler = setTimeout(SensorTag2650DisconnectHandler,BLEConnectionDuration, peripheral);
 	}
 
 	var AmbientTempUnit = "Celsius";
@@ -83,7 +83,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			}
 			//bus.emit('connected', peripheral.uuid);
 			bus.emit('connected', peripheral);
-			bus.emit('sensor_group_connected',SensorDetails.GroupId);
+			//bus.emit('sensor_group_connected',SensorDetails.GroupId);
 			console.log('connected to peripheral (SensorTag2650): '	+ peripheral.uuid);
 			bus.emit('log', 'connected to SensorTag2650: '	+ peripheral.uuid);
 			process.on('SIGINT', function() {
@@ -92,7 +92,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 				if(!disconnectEventsSent) {
 					console.log("Emit Events");
 					bus.emit('disconnected', peripheral.uuid);
-					bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
+					//bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
 					bus.emit('log', 'Disconnected to SensorTag2650: '	+ peripheral.uuid);
 					disconnectEventsSent = true;
 				}
@@ -128,8 +128,14 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					console.log("Error reading RSSI\n");
 				} else {
 					console.log("RSSI  SENT : ", rssi );
-					var json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
-														AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi};
+					var json_data;
+					if (SensorDetails != null) {
+						json_data = {SensorKey:SensorDetails.SensorKey,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+										AssetBarcode:SensorDetails.AssetBarcode,RSSI:rssi};
+					} else {
+						var name = peripheral.advertisement.localName + peripheral.uuid;
+						json_data = {SensorName:name,Timestamp: new Date(),RSSI:rssi};
+					}
 					CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 				}
 			});
@@ -223,13 +229,27 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 
 										convertIrTemperatureData(data, AmbientTempUnit, ObjectTempUnit, function(objectTemperature, ambientTemperature) {
 											if(capIdAmbientTemperature > -1) {
-												var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+												var json_data;
+												if(SensorDetails != null) {
+													json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																AssetBarcode:SensorDetails.AssetBarcode,AmbientTemperature:ambientTemperature};
+												} else {
+													var name = peripheral.advertisement.localName + peripheral.uuid;
+													json_data = {SensorName:name,CapabilityId:capIdAmbientTemperature,Timestamp: new Date(),
+																AmbientTemperature:ambientTemperature};
+												}
 												CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud							
 											}
 											if(capIdObjectTemperature > -1) {
-												var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdObjectTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+												var json_data;
+												if(SensorDetails != null) {
+													json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdObjectTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																AssetBarcode:SensorDetails.AssetBarcode,ObjectTemperature:objectTemperature};
+												} else {
+													var name = peripheral.advertisement.localName + peripheral.uuid;
+													json_data = {SensorName:name,CapabilityId:capIdObjectTemperature,Timestamp: new Date(),
+																ObjectTemperature:objectTemperature};
+												}
 												CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud							
 											}
 										});
@@ -290,8 +310,15 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 											convertHumidityData(data, function(ambientTemperature, humidity) {
 												
 												// data in percentage
-												var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdHumidity,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+												var json_data;
+												if(SensorDetails != null) {
+													json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdHumidity,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																AssetBarcode:SensorDetails.AssetBarcode,Humidity:humidity};
+												} else {
+													var name = peripheral.advertisement.localName + peripheral.uuid;
+													json_data = {SensorName:name,CapabilityId:capIdHumidity,Timestamp: new Date(),
+																Humidity:humidity};
+												}
 												CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 											});
 										});
@@ -347,8 +374,15 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 										convertBarometricPressureData(data, function(barometricPressure) {
 											//console.log("Barometric Pressure: ", barometricPressure);
 											// data in mBar
-											var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdBarometricPressure,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+											var json_data;
+											if(SensorDetails != null) {
+												json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdBarometricPressure,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 															AssetBarcode:SensorDetails.AssetBarcode,BarometricPressure:barometricPressure};
+											} else {
+												var name = peripheral.advertisement.localName + peripheral.uuid;
+												json_data = {SensorName:name,CapabilityId:capIdBarometricPressure,Timestamp: new Date(),
+															BarometricPressure:barometricPressure};
+											}
 											CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 										});	
 										});
@@ -415,8 +449,15 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 													isFirstAccelerometerReading = false;
 												} else {
 													isFirstAccelerometerReading = false;
-													var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAccelerometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+													var json_data;
+													if(SensorDetails != null) {
+														json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAccelerometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																	AssetBarcode:SensorDetails.AssetBarcode,x:xA,y:yA,z:zA};
+													} else {
+														var name = peripheral.advertisement.localName + peripheral.uuid;
+														json_data = {SensorName:name,CapabilityId:capIdAccelerometer,Timestamp: new Date(),
+																	x:xA,y:yA,z:zA};
+													}
 													CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 												}
 											}
@@ -427,8 +468,15 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 													isFirstMagnetometerReading = false;
 												} else {
 													isFirstMagnetometerReading = false;
-													var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdMagnetometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+													var json_data;
+													if(SensorDetails != null) {
+														json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdMagnetometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																	AssetBarcode:SensorDetails.AssetBarcode,x:xM,y:yM,z:zM};
+													} else {
+														var name = peripheral.advertisement.localName + peripheral.uuid;
+														json_data = {SensorName:name,CapabilityId:capIdMagnetometer,Timestamp: new Date(),
+																	x:xM,y:yM,z:zM};
+													}
 													CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 												}
 											}
@@ -439,8 +487,15 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 													isFirstGyrometerReading = false;
 												} else {
 													isFirstGyrometerReading = false;
-													var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdGyroscope,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+													var json_data;
+													if(SensorDetails != null) {
+														json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdGyroscope,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																	AssetBarcode:SensorDetails.AssetBarcode,x:xG,y:yG,z:zG};
+													} else {
+														var name = peripheral.advertisement.localName + peripheral.uuid;
+														json_data = {SensorName:name,CapabilityId:capIdGyroscope,Timestamp: new Date(),
+																	x:xG,y:yG,z:zG};
+													}
 													CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 												}
 											}
@@ -507,9 +562,15 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 													isFirstLuxometerReading = false;
 													return;
 												}
-												var json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdLuxometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
+												var json_data;
+												if (SensorDetails != null) {
+													json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdLuxometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																AssetBarcode:SensorDetails.AssetBarcode,Luxometer:lux};
-												CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+												} else {
+													var name = peripheral.advertisement.localName + peripheral.uuid;
+													json_data = {SensorName:name,CapabilityId:capIdLuxometer,Timestamp: new Date(),
+																Luxometer:lux};
+												} CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 											});
 											});
 											var writeData = new Buffer([0x01]);
@@ -546,7 +607,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 			if(!disconnectEventsSent) {
 				console.log("Emit Events");
 				bus.emit('disconnected', peripheral.uuid);
-				bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
+				//bus.emit('sensor_group_disconnected',SensorDetails.GroupId);
 				bus.emit('log', 'Disconnected to SensorTag2650: '	+ peripheral.uuid);
 				disconnectEventsSent = true;
 			}
