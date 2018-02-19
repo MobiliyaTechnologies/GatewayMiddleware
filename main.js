@@ -528,7 +528,9 @@ function connectPeripheral(peripheral) {
 								thisSensorCapabilities = SensorCapabilities[whitelistContentAll[SensorId].SensorType].SensorCapabilities;
 								//console.log("thisSensorCapabilities: " + JSON.stringify(thisSensorCapabilities));
 							}
-						}
+						} else if(SensorCapabilities != undefined) {
+							thisSensorCapabilities = SensorCapabilities['SensorTag2650'].SensorCapabilities;
+}
 						var sensorDetails = null;
 						if(shouldCheckSensorWhitelist) {
 							sensorDetails = whitelistContentAll[SensorId];

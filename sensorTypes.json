@@ -1,32 +1,14 @@
 {
 	"SensorTag2650": {
 		"SensorCapabilities": [{
-			"Id": 13,
-			"Name": "Accelerometer"
-		}, {
 			"Id": 9,
 			"Name": "AmbientTemperature"
-		}, {
-			"Id": 12,
-			"Name": "BarometricPressure"
-		}, {
-			"Id": 21,
-			"Name": "Gateway"
-		}, {
-			"Id": 15,
-			"Name": "Gyroscope"
 		}, {
 			"Id": 11,
 			"Name": "Humidity"
 		}, {
 			"Id": 16,
 			"Name": "Luxometer"
-		}, {
-			"Id": 14,
-			"Name": "Magnetometer"
-		}, {
-			"Id": 10,
-			"Name": "ObjectTemperature"
 		}],
 		"SensorType": "SensorTag2650"
 	},

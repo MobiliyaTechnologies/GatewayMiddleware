@@ -36,8 +36,20 @@ SensorTag2650DisconnectHandler = function(peripheral) {
 	});
 };
 
+sendData = function(CloudAdaptor,DataWrapper,json) {
+	if(json.Temperature != -1 && json.Humidity != -1 && json.Brightness != -1) {
+		//send data	
+		CloudAdaptor(DataWrapper(json)); // pushing the data to cloud	
+	}
+};
+
 SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,DataWrapper,SensorDetails,SensorCapabilities,Capabilities,BLEConnectionDuration,ContinuousBLEConnection){ // sensor tag 2650 handle
+	
 	var disconnectEventsSent = false;
+	
+	var name = peripheral.advertisement.localName + peripheral.uuid;
+	var jsondata = {SensorName:name,Timestamp: new Date()};
+
 	
 	if(ContinuousBLEConnection===0) {
 		console.log("SetTiomout  for DisconnectHandler time ", new Date() );
@@ -112,7 +124,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					process.exit();
 				}
 			});
-
+/*
 			peripheral.updateRssi(function(error, rssi){
 				console.log("update RSSI");
 				if(error) {
@@ -139,7 +151,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 				}
 			});
-			
+			*/
 			console.log('discoverServices for '	+ peripheral.uuid);
 
 			peripheral.discoverServices(null,function(error, services) { // service discovery
@@ -148,10 +160,10 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					console.log(error);
 					appInsightsClient.trackException(error);
 				} else {
-					/*console.log('discovered the following services:');
+					console.log('discovered the following services:');
 					for ( var i in services) {
 						console.log('  '+ i	+ ' uuid: '	+ services[i].uuid);
-					}*/
+					}
 				}
 				
 			});
@@ -191,8 +203,9 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					}
 
 					for ( var i in services) {
-						//console.log("service ", services[i].uuid);
+						console.log("service ", services[i].uuid);
 						if(services[i].uuid == "f000aa0004514000b000000000000000") {	//temp service uuid
+							console.log("TEMP Service");
 							// Temperature
 							if (capIdAmbientTemperature > -1 || capIdObjectTemperature > -1) {
 								//var TemperatureService = services[3]; // uuid: f000aa0004514000b000000000000000
@@ -215,7 +228,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 									var startSamplingTemperatureData;	// = characteristics[1];	// uuid: f000aa0204514000b000000000000000
 									var notifyServiceTemperatureData;	// = characteristic[0];		// uuid: f000aa0104514000b000000000000000
 									for ( var i in characteristics) {
-										//console.log("characteristic ", characteristics[i].uuid);
+										console.log("characteristic ", characteristics[i].uuid);
 										if(characteristics[i].uuid == "f000aa0204514000b000000000000000") {	//temp characteristic uuid
 											startSamplingTemperatureData = characteristics[i];
 										} else if(characteristics[i].uuid == "f000aa0104514000b000000000000000") {
@@ -233,12 +246,12 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 												if(SensorDetails != null) {
 													json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																AssetBarcode:SensorDetails.AssetBarcode,AmbientTemperature:ambientTemperature};
+CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud							
 												} else {
-													var name = peripheral.advertisement.localName + peripheral.uuid;
-													json_data = {SensorName:name,CapabilityId:capIdAmbientTemperature,Timestamp: new Date(),
-																AmbientTemperature:ambientTemperature};
+													jsondata.Temperature =ambientTemperature;
+sendData(CloudAdaptor,DataWrapper,jsondata);
 												}
-												CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud							
+												
 											}
 											if(capIdObjectTemperature > -1) {
 												var json_data;
@@ -273,21 +286,27 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 							else if(services[i].uuid == "f000aa2004514000b000000000000000") {	//hiumidity service uuid
 
 								// Humidity
+								console.log("Humidity Service");
 								if (capIdHumidity > -1) {
+									console.log("Humidity Service 1");
 									var HumidityService = services[i]; // uuid: f000aa2004514000b000000000000000
 									if (HumidityService == undefined) {
+										console.log("Humidity Service Return");
 										return;
 									}
+									console.log("Humidity Service2");
 									HumidityService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
 										if (error) {
+											console.log("Humidity Service Error", error);
 											appInsightsClient.trackException(error);
 										}
+										console.log("Humidity Service 3");
 										console.log('Humidity discovered the following characteristics:');
 										for ( var i in characteristics) {
 											console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
 										}
 									});
-
+									console.log("Humidity Service 4");
 									HumidityService.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
 										//console.log("Humidity characteristicsDiscover " + characteristics);
 										var startSamplingHumidityData;	// = characteristics[1];	 // uuid: f000aa2204514000b000000000000000
@@ -300,26 +319,29 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 												notifyServiceHumidityData = characteristics[i];
 											}
 										}
-										
+										console.log("Humidity Service 5");
 										if (notifyServiceHumidityData == undefined || startSamplingHumidityData == undefined) {
 											return;
 										}
 									
 										notifyServiceHumidityData.on('data', function(data,isNotification) { // notification events form humidity service
-											//console.log("Humidity data received");
+											console.log("Humidity Service 6");
+											console.log("Humidity data received");
 											convertHumidityData(data, function(ambientTemperature, humidity) {
 												
 												// data in percentage
 												var json_data;
+												console.log("Humidity data received");
 												if(SensorDetails != null) {
 													json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdHumidity,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																AssetBarcode:SensorDetails.AssetBarcode,Humidity:humidity};
+				CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 												} else {
-													var name = peripheral.advertisement.localName + peripheral.uuid;
-													json_data = {SensorName:name,CapabilityId:capIdHumidity,Timestamp: new Date(),
-																Humidity:humidity};
+jsondata.Humidity=humidity;
+sendData(CloudAdaptor,DataWrapper,jsondata);
+																
 												}
-												CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+								
 											});
 										});
 										var writeData = new Buffer([0x01]);
@@ -566,11 +588,14 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 												if (SensorDetails != null) {
 													json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdLuxometer,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																AssetBarcode:SensorDetails.AssetBarcode,Luxometer:lux};
+CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
 												} else {
-													var name = peripheral.advertisement.localName + peripheral.uuid;
-													json_data = {SensorName:name,CapabilityId:capIdLuxometer,Timestamp: new Date(),
-																Luxometer:lux};
-												} CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud
+													
+jsondata.Brightness=lux;
+sendData(CloudAdaptor,DataWrapper,jsondata);
+
+
+												} 
 											});
 											});
 											var writeData = new Buffer([0x01]);
