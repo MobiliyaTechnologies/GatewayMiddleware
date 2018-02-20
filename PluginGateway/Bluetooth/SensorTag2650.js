@@ -37,8 +37,8 @@ SensorTag2650DisconnectHandler = function(peripheral) {
 };
 
 sendData = function(CloudAdaptor,DataWrapper,json) {
-	if(json.Temperature != -1 && json.Humidity != -1 && json.Brightness != -1) {
-		//send data	
+	if(json.Temperature != undefined && json.Humidity != undefined && json.Brightness != undefined) {
+		//send data
 		CloudAdaptor(DataWrapper(json)); // pushing the data to cloud	
 	}
 };
@@ -205,21 +205,22 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 					for ( var i in services) {
 						console.log("service ", services[i].uuid);
 						if(services[i].uuid == "f000aa0004514000b000000000000000") {	//temp service uuid
-							console.log("TEMP Service");
+							//console.log("TEMP Service");
 							// Temperature
-							if (capIdAmbientTemperature > -1 || capIdObjectTemperature > -1) {
+							if (true) {
 								//var TemperatureService = services[3]; // uuid: f000aa0004514000b000000000000000
 								var TemperatureService = services[i]; // uuid: f000aa0004514000b000000000000000
 								if (TemperatureService == undefined) {
 									return;
 								}
 								TemperatureService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
-										console.log('Temperature discovered the following characteristics:');
+										//console.log('Temperature discovered the following characteristics:', characteristics);
 										if(error) {
+console.log("Temperature characteristics Error: ", error);
 											appInsightsClient.trackException(error);
 										}
 										for ( var i in characteristics) {
-											console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
+											//console.log('Temperature  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
 										}
 								});
 
@@ -228,7 +229,7 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 									var startSamplingTemperatureData;	// = characteristics[1];	// uuid: f000aa0204514000b000000000000000
 									var notifyServiceTemperatureData;	// = characteristic[0];		// uuid: f000aa0104514000b000000000000000
 									for ( var i in characteristics) {
-										console.log("characteristic ", characteristics[i].uuid);
+										//console.log("characteristic ", characteristics[i].uuid);
 										if(characteristics[i].uuid == "f000aa0204514000b000000000000000") {	//temp characteristic uuid
 											startSamplingTemperatureData = characteristics[i];
 										} else if(characteristics[i].uuid == "f000aa0104514000b000000000000000") {
@@ -239,21 +240,22 @@ SensorTag2650.prototype.SensorTagHandle2650 = function (peripheral,CloudAdaptor,
 										return;
 									}
 									notifyServiceTemperatureData.on('data', function(data,isNotification) { // notification events form temperature service
-
+//console.log("Temperature data received");
 										convertIrTemperatureData(data, AmbientTempUnit, ObjectTempUnit, function(objectTemperature, ambientTemperature) {
-											if(capIdAmbientTemperature > -1) {
+											//if(capIdAmbientTemperature > -1) {
 												var json_data;
 												if(SensorDetails != null) {
 													json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdAmbientTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																AssetBarcode:SensorDetails.AssetBarcode,AmbientTemperature:ambientTemperature};
 CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud							
 												} else {
+//console.log("Temperature: ", ambientTemperature);
 													jsondata.Temperature =ambientTemperature;
 sendData(CloudAdaptor,DataWrapper,jsondata);
 												}
 												
-											}
-											if(capIdObjectTemperature > -1) {
+											//}
+											/*if(capIdObjectTemperature > -1) {
 												var json_data;
 												if(SensorDetails != null) {
 													json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdObjectTemperature,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
@@ -264,7 +266,7 @@ sendData(CloudAdaptor,DataWrapper,jsondata);
 																ObjectTemperature:objectTemperature};
 												}
 												CloudAdaptor(DataWrapper(json_data)); // pushing the data to cloud							
-											}
+											}*/
 										});
 									});
 
@@ -286,27 +288,27 @@ sendData(CloudAdaptor,DataWrapper,jsondata);
 							else if(services[i].uuid == "f000aa2004514000b000000000000000") {	//hiumidity service uuid
 
 								// Humidity
-								console.log("Humidity Service");
-								if (capIdHumidity > -1) {
-									console.log("Humidity Service 1");
+								//console.log("Humidity Service");
+								if (true) {
+									//console.log("Humidity Service 1");
 									var HumidityService = services[i]; // uuid: f000aa2004514000b000000000000000
 									if (HumidityService == undefined) {
 										console.log("Humidity Service Return");
 										return;
 									}
-									console.log("Humidity Service2");
+									//console.log("Humidity Service2");
 									HumidityService.discoverCharacteristics(null,function(error,characteristics) { // characteristic discovery
 										if (error) {
 											console.log("Humidity Service Error", error);
 											appInsightsClient.trackException(error);
 										}
-										console.log("Humidity Service 3");
+										//console.log("Humidity Service 3");
 										console.log('Humidity discovered the following characteristics:');
 										for ( var i in characteristics) {
 											console.log('  '+ i	+ ' uuid: '	+ characteristics[i].uuid);
 										}
 									});
-									console.log("Humidity Service 4");
+									//console.log("Humidity Service 4");
 									HumidityService.once('characteristicsDiscover', function(characteristics){ // on characteristic discover
 										//console.log("Humidity characteristicsDiscover " + characteristics);
 										var startSamplingHumidityData;	// = characteristics[1];	 // uuid: f000aa2204514000b000000000000000
@@ -319,19 +321,19 @@ sendData(CloudAdaptor,DataWrapper,jsondata);
 												notifyServiceHumidityData = characteristics[i];
 											}
 										}
-										console.log("Humidity Service 5");
+										//console.log("Humidity Service 5");
 										if (notifyServiceHumidityData == undefined || startSamplingHumidityData == undefined) {
 											return;
 										}
 									
 										notifyServiceHumidityData.on('data', function(data,isNotification) { // notification events form humidity service
-											console.log("Humidity Service 6");
-											console.log("Humidity data received");
+											//console.log("Humidity Service 6");
+											//console.log("Humidity data received");
 											convertHumidityData(data, function(ambientTemperature, humidity) {
 												
 												// data in percentage
 												var json_data;
-												console.log("Humidity data received");
+												//console.log("Humidity data received");
 												if(SensorDetails != null) {
 													json_data = {SensorKey:SensorDetails.SensorKey,CapabilityId:capIdHumidity,GroupId:SensorDetails.GroupId,Timestamp: new Date(),
 																AssetBarcode:SensorDetails.AssetBarcode,Humidity:humidity};
@@ -546,7 +548,7 @@ sendData(CloudAdaptor,DataWrapper,jsondata);
 							} 
 							else if(services[i].uuid == "f000aa7004514000b000000000000000") {	//luxometer service uuid
 								// Luxometer
-								if (capIdLuxometer > -1) {			
+								if (true) {			
 									var LuxometerService = services[i]; // uuid: f000aa7004514000b000000000000000
 									if (LuxometerService == undefined) {
 										return;

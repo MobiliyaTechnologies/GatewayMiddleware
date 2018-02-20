@@ -47,6 +47,7 @@ AzureAdaptor.prototype.AzureHandle= function (json_data) {
 	try {
 		var message = new Message(json_data);
 		//message.properties.add('temperatureAlert', (temperature > 28) ? 'true' : 'false');
+		message.properties.add('MessageType', 'Sensor');
 		console.log('Sending message: ' + message.getData());
 		client.sendEvent(message, printResultFor('send'));
 	} catch(error) {
