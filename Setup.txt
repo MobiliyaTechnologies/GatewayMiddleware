@@ -1,0 +1,7 @@
+Set up on new PC
+
+1. Install Visual Studio 2015 with Visual C++ component
+2. Install Node JS latest version
+3. Install Python 2.7
+4. Install Zadig and update driver
+5. Follow instructions from Packaging_Instructions.txt file
