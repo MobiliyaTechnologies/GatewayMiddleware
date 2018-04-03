@@ -30,7 +30,7 @@ var bodyParser = require('body-parser');
 var bus = require('./eventbus');
 //var open = require('opn');
 var cors = require('cors');
-
+/*
 console.log("Creating app insights client");
 let appInsights = require('applicationinsights');
 let client;
@@ -42,6 +42,7 @@ try {
 		console.log('Error in initializing appInsights client.');
 		console.log(error);
 }
+*/
 //var { app, BrowserWindow } = require('electron')
 // OR
 // Three Lines
@@ -189,7 +190,7 @@ app.get('/resetgateway', function (req, res) {
 	deleteFiles(files, function(err) {
 		if (err) {
 			console.log(err);
-			client.trackException(err);
+			//client.trackException(err);
 		} else {
 			console.log('all files removed');
 		}
@@ -206,7 +207,7 @@ var server = app.listen(app.get('port'), function() {
 
 getmac.getMac(function(err,macAddress){
     if (err) {
-			client.trackException(err);
+			//client.trackException(err);
 			throw err;
 		}
     console.log(macAddress);
