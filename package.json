@@ -18,7 +18,6 @@
     "jsonfile": "^3.0.0",
     "kafka-node": "^1.5.0",
     "moment-timezone": "^0.5.11",
-    "usb": "1.2.0",
     "noble": "^1.8.0",
     "opn": "^5.1.0",
     "ws": "^3.0.0"
