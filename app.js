@@ -12,13 +12,19 @@ var bodyParser = require('body-parser');
 var bus = require('./eventbus');
 //var open = require('opn');
 var cors = require('cors');
-
+/*
 console.log("Creating app insights client");
 let appInsights = require('applicationinsights');
-appInsights.setup("37feed53-76b6-44a9-b877-d0469f3743fb").start();
-let client = appInsights.client;
-//client.trackException(new Error("handled exceptions on Gateway"));
-
+let client;
+try {
+		appInsights.setup("37feed53-76b6-44a9-b877-d0469f3743fb").start();
+		client = appInsights.client;
+		//client.trackException(new Error("handled exceptions on Gateway"));
+} catch (error) {
+		console.log('Error in initializing appInsights client.');
+		console.log(error);
+}
+*/
 //var { app, BrowserWindow } = require('electron')
 // OR
 // Three Lines
@@ -137,7 +143,7 @@ app.get('/resetgateway', function (req, res) {
 	deleteFiles(files, function(err) {
 		if (err) {
 			console.log(err);
-			client.trackException(err);
+			//client.trackException(err);
 		} else {
 			console.log('all files removed');
 		}
@@ -154,7 +160,7 @@ var server = app.listen(app.get('port'), function() {
 
 getmac.getMac(function(err,macAddress){
     if (err) {
-			client.trackException(err);
+			//client.trackException(err);
 			throw err;
 		}
     console.log(macAddress);

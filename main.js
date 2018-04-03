@@ -41,10 +41,10 @@ var IsAzureClientConnected = false;
 var isScanningStarted = false;
 var startedBLEApp = 0;
 var startScanningIntervalFunction;
-
+/*
 let appInsights = require('applicationinsights');
 let client = appInsights.client;
-
+*/
 //Create an event handler:
 var myUpdateEventHandler = function () {
 	  updateSensorList();
@@ -192,7 +192,7 @@ var peripheralDisconnectHandler = function() {
     	    if(error) {
 	    	    console.log(this.uuid + " Disconnect error MAIN");
 		        console.log(error);
-				client.trackException(error);
+				//client.trackException(error);
 		    } else {
 			    console.log(this.uuid + " Disconnect handler MAIN");
 		    }
@@ -308,7 +308,7 @@ function startScanning() {
 		bus.emit('log',"Please enable bluetooth and Try Again !");
 		console.log("Error in start Scanning");
 		console.log(error);
-		client.trackException(error);
+		//client.trackException(error);
 		IsBluetoothPoweredOn = false;
 		console.log("BLEApp clear HandleQueueInterval");
 		clearInterval(HandleQueueInterval);
