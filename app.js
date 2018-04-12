@@ -97,7 +97,7 @@ var getConnectionString = function() {
 	});
 }
 
-setTimeout(getConnectionString, 7000);
+setTimeout(getConnectionString, 3000);
 
 // Define the port to run on
 app.set('port', 65159);
